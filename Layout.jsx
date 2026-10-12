@@ -1,0 +1,92 @@
+import { useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { ROLES, useApp } from './contexte.jsx';
+import { supabase, traduireErreur } from './supabase';
+import Modal from './Modal.jsx';
+
+export default function Layout({ menu, children }) {
+  const { profil, role, iepps, iepp, ieppId, setIeppId, annee, deconnexion } = useApp();
+  const [ouvert, setOuvert] = useState(false);
+  const [mdp, setMdp] = useState(false);
+  const loc = useLocation();
+
+  return (
+    <div className="appli">
+      <header className="entete">
+        <button className="burger" aria-label="Menu" onClick={() => setOuvert(!ouvert)}>☰</button>
+        <div className="marque">
+          <span className="marque-icone">🎓</span>
+          <span>Gestion <b>IEPP</b></span>
+        </div>
+        <div className="sep" />
+        {iepp?.logo_url && <img className="logo-iepp" src={iepp.logo_url} alt="" />}
+        {role === 'superviseur' ? (
+          <select className="choix-iepp" value={ieppId || ''} onChange={(e) => setIeppId(e.target.value)}>
+            {iepps.length === 0 && <option value="">Aucune circonscription</option>}
+            {iepps.map((i) => <option key={i.id} value={i.id}>{i.nom}</option>)}
+          </select>
+        ) : (
+          <div className="choix-iepp fixe">{iepp?.nom || '—'}</div>
+        )}
+        {annee && <span className="pastille-annee">{annee.libelle}</span>}
+        <div className="espace" />
+        <div className="utilisateur">
+          <div className="avatar">{(profil.nom_complet || '?')[0].toUpperCase()}</div>
+          <div className="utilisateur-texte">
+            <b>{profil.nom_complet}</b>
+            <span>{ROLES[role]}</span>
+          </div>
+        </div>
+        <button className="btn-contour" onClick={() => setMdp(true)}>Mot de passe</button>
+        <button className="btn-contour" onClick={deconnexion}>Déconnexion</button>
+      </header>
+      <div className="corps">
+        <nav className={`menu ${ouvert ? 'ouvert' : ''}`} onClick={() => setOuvert(false)}>
+          {menu.map((m) => (
+            <NavLink key={m.chemin} to={m.chemin} end={m.chemin === '/'}
+              className={({ isActive }) => (isActive || (m.chemin !== '/' && loc.pathname.startsWith(m.chemin)) ? 'actif' : '')}>
+              {m.titre}
+            </NavLink>
+          ))}
+        </nav>
+        <main className="contenu">
+          {!annee && (
+            <div className="alerte">Aucune année scolaire active. {role === 'superviseur' ? 'Créez-la dans Paramétrage circonscription.' : 'Le superviseur doit en activer une.'}</div>
+          )}
+          {children}
+        </main>
+      </div>
+      {mdp && <ChangerMotDePasse fermer={() => setMdp(false)} />}
+    </div>
+  );
+}
+
+function ChangerMotDePasse({ fermer }) {
+  const [a, setA] = useState('');
+  const [b, setB] = useState('');
+  const [msg, setMsg] = useState('');
+  const [ok, setOk] = useState(false);
+
+  async function valider(e) {
+    e.preventDefault();
+    if (a.length < 8) return setMsg('Au moins 8 caractères.');
+    if (a !== b) return setMsg('Les deux mots de passe sont différents.');
+    const { error } = await supabase.auth.updateUser({ password: a });
+    if (error) return setMsg(traduireErreur(error));
+    setOk(true);
+    setMsg('Mot de passe modifié.');
+  }
+  return (
+    <Modal titre="Changer mon mot de passe" fermer={fermer}>
+      <form onSubmit={valider} className="formulaire">
+        <label>Nouveau mot de passe<input type="password" value={a} onChange={(e) => setA(e.target.value)} autoFocus /></label>
+        <label>Confirmer<input type="password" value={b} onChange={(e) => setB(e.target.value)} /></label>
+        {msg && <p className={ok ? 'succes' : 'erreur'}>{msg}</p>}
+        <div className="actions">
+          <button type="button" className="btn-contour" onClick={fermer}>Fermer</button>
+          {!ok && <button className="btn">Enregistrer</button>}
+        </div>
+      </form>
+    </Modal>
+  );
+}

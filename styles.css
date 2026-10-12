@@ -1,0 +1,249 @@
+:root {
+  --vert: #0b6b5d;
+  --vert-fonce: #084c42;
+  --vert-clair: #e3f4ef;
+  --fond: #f1faf7;
+  --or: #e0a526;
+  --orange-ivoire: #f77f00;
+  --texte: #12312c;
+  --discret: #5d7a74;
+  --bord: #d4ebe4;
+  --blanc: #ffffff;
+  --rouge: #c0392b;
+  --rose: #d6578a;
+  --bleu: #2f6fb0;
+  --rayon: 14px;
+  --ombre: 0 1px 2px rgba(10, 60, 50, 0.06), 0 6px 20px rgba(10, 60, 50, 0.05);
+}
+
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; min-height: 100%; }
+body { font-family: 'Nunito Sans', system-ui, sans-serif; color: var(--texte); background: var(--fond); font-size: 15px; }
+h1, h2, h3 { font-family: 'Fraunces', Georgia, serif; color: var(--vert-fonce); margin: 0 0 12px; }
+h1 { font-size: 30px; }
+h2 { font-size: 21px; margin-top: 28px; }
+h3 { font-size: 17px; }
+a { color: var(--vert); }
+code { background: var(--vert-clair); padding: 2px 6px; border-radius: 6px; font-size: 0.92em; }
+input, select, textarea { font: inherit; color: inherit; border: 1px solid var(--bord); border-radius: 10px; padding: 9px 11px; background: var(--blanc); min-width: 0; }
+input:focus, select:focus, textarea:focus { outline: 2px solid rgba(11, 107, 93, 0.25); border-color: var(--vert); }
+input:disabled, select:disabled { background: #f5f8f7; }
+input.petit { width: 80px; }
+input.moyen { width: 130px; }
+
+/* Boutons */
+.btn, .btn-contour, .lien { font: inherit; cursor: pointer; border-radius: 10px; }
+.btn { background: var(--vert); color: #fff; border: 0; padding: 10px 18px; font-weight: 700; }
+.btn:hover { background: var(--vert-fonce); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn.large { width: 100%; padding: 13px; font-size: 16px; }
+.btn-contour { background: var(--blanc); color: var(--vert); border: 1px solid var(--bord); padding: 9px 16px; font-weight: 600; display: inline-block; }
+.btn-contour:hover { border-color: var(--vert); }
+.lien { background: none; border: 0; color: var(--vert); padding: 4px 6px; font-weight: 600; }
+.lien:hover { text-decoration: underline; }
+.lien.danger { color: var(--rouge); }
+
+/* Structure */
+.appli { min-height: 100vh; display: flex; flex-direction: column; }
+.entete { display: flex; align-items: center; gap: 14px; padding: 10px 24px; background: var(--blanc); border-bottom: 1px solid var(--bord); position: sticky; top: 0; z-index: 20; flex-wrap: wrap; }
+.marque { display: flex; align-items: center; gap: 8px; font-family: 'Fraunces', serif; font-size: 24px; color: var(--vert); font-weight: 700; }
+.marque b { color: var(--orange-ivoire); }
+.marque.grande { font-size: 34px; }
+.marque-icone { font-size: 1.1em; }
+.sep { width: 1px; height: 34px; background: var(--bord); }
+.logo-iepp { width: 40px; height: 40px; object-fit: contain; border-radius: 50%; }
+.choix-iepp { border-radius: 999px; padding: 8px 16px; border: 1px solid var(--bord); background: var(--vert-clair); color: var(--vert-fonce); font-weight: 700; max-width: 360px; }
+.choix-iepp.fixe { display: inline-block; }
+.pastille-annee { background: #fff4e0; color: #8a5a00; border-radius: 999px; padding: 5px 12px; font-weight: 700; font-size: 13px; }
+.espace { flex: 1; }
+.utilisateur { display: flex; align-items: center; gap: 10px; }
+.avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--vert); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 18px; }
+.utilisateur-texte { display: flex; flex-direction: column; line-height: 1.2; }
+.utilisateur-texte span { color: var(--vert); font-size: 13px; }
+.burger { display: none; background: none; border: 0; font-size: 24px; cursor: pointer; color: var(--vert); }
+.corps { display: flex; flex: 1; }
+.menu { width: 270px; flex-shrink: 0; padding: 18px 12px; background: var(--blanc); border-right: 1px solid var(--bord); display: flex; flex-direction: column; gap: 2px; position: sticky; top: 63px; height: calc(100vh - 63px); overflow-y: auto; }
+.menu a { padding: 11px 16px; border-radius: 12px; text-decoration: none; color: var(--vert-fonce); font-weight: 600; }
+.menu a:hover { background: var(--vert-clair); }
+.menu a.actif { background: var(--vert); color: #fff; }
+.contenu { flex: 1; padding: 28px 36px 60px; min-width: 0; }
+.sous-titre { color: var(--discret); margin: -4px 0 20px; }
+.discret { color: var(--discret); font-size: 0.92em; }
+.titre-ligne { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+/* Cartes */
+.carte { background: var(--blanc); border: 1px solid var(--bord); border-radius: var(--rayon); padding: 20px 24px; box-shadow: var(--ombre); margin-bottom: 16px; }
+.carte-succes { border-color: #9fd8c4; }
+.pile-etats { display: flex; flex-direction: column; gap: 14px; max-width: 800px; margin-bottom: 20px; }
+.carte.etat { display: flex; justify-content: space-between; align-items: center; margin: 0; }
+.carte.etat h3 { margin: 0 0 4px; font-family: 'Nunito Sans', sans-serif; color: var(--texte); }
+.carte.etat p { margin: 0; }
+.voyant { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.voyant span { width: 13px; height: 13px; border-radius: 50%; background: #aaa; }
+.voyant.ok span { background: #14b8a6; }
+.voyant.ko span { background: var(--rouge); }
+.voyant.attente span { background: var(--or); animation: pulse 1s infinite; }
+@keyframes pulse { 50% { opacity: 0.3; } }
+.chiffres { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 22px; }
+.chiffre { background: var(--blanc); border: 1px solid var(--bord); border-radius: var(--rayon); padding: 16px; display: flex; flex-direction: column; }
+.chiffre b { font-family: 'Fraunces', serif; font-size: 28px; color: var(--vert); }
+.chiffre span { color: var(--discret); font-size: 13px; }
+.grille-cartes { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.carte.composition h3 { margin: 0; }
+.pile { display: flex; flex-direction: column; gap: 4px; }
+.deux-colonnes { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+/* Onglets */
+.onglets { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; border-bottom: 1px solid var(--bord); }
+.onglets button { background: none; border: 0; border-bottom: 3px solid transparent; padding: 10px 14px; font: inherit; font-weight: 700; color: var(--discret); cursor: pointer; }
+.onglets button.actif { color: var(--vert); border-bottom-color: var(--vert); }
+.onglets.petits { border: 0; }
+.onglets.petits button { border: 1px solid var(--bord); border-radius: 999px; padding: 5px 12px; }
+.onglets.petits button.actif { background: var(--vert); color: #fff; }
+
+/* Outils et tableaux */
+.barre-outils { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 14px 0; }
+.recherche { width: 280px; }
+.choix-ligne { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 12px; }
+.choix-ligne label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 13px; color: var(--discret); min-width: 220px; }
+.choix-ligne label.case { flex-direction: row; align-items: center; min-width: 0; }
+.en-ligne { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.tableau-cadre { overflow-x: auto; background: var(--blanc); border: 1px solid var(--bord); border-radius: var(--rayon); }
+.tableau { width: 100%; border-collapse: collapse; }
+.tableau th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--discret); background: #f7fcfa; padding: 10px 12px; border-bottom: 1px solid var(--bord); white-space: nowrap; }
+.tableau td { padding: 9px 12px; border-bottom: 1px solid #edf5f2; vertical-align: middle; }
+.tableau tbody tr:hover { background: #fafdfc; }
+.tableau tfoot td { font-weight: 700; background: #f7fcfa; }
+.tableau td.nom { white-space: nowrap; font-weight: 600; }
+.actions-ligne { white-space: nowrap; text-align: right; }
+.vide { color: var(--discret); text-align: center; padding: 26px !important; }
+p.vide { background: var(--blanc); border: 1px dashed var(--bord); border-radius: var(--rayon); }
+.tableau.saisie th { text-align: center; }
+.tableau.saisie td { padding: 4px 6px; text-align: center; }
+input.note { width: 64px; text-align: center; padding: 6px; }
+input.note.invalide { border-color: var(--rouge); background: #fdecea; }
+input.note.abs { background: #fff4e0; color: #8a5a00; font-weight: 700; }
+
+.badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--vert-clair); color: var(--vert-fonce); }
+.badge.vert { background: #d5f3e8; color: #0b6b4a; }
+.badge.gris { background: #eceff0; color: #5b6466; }
+.badge.orange { background: #fff0d9; color: #9a5b00; }
+.badge.rouge { background: #fde2df; color: #a12d22; }
+.etiquettes { display: flex; flex-wrap: wrap; gap: 6px; }
+.jauge { height: 10px; background: #e8f1ee; border-radius: 999px; overflow: hidden; margin: 6px 0; }
+.jauge span { display: block; height: 100%; border-radius: 999px; }
+.jauge .vert { background: #14b8a6; }
+.jauge .orange { background: var(--or); }
+.jauge .rouge { background: var(--rouge); }
+.progression-globale { display: flex; flex-direction: column; gap: 4px; }
+.barre { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: #f0f5f3; }
+.barre .g, .pastille.g { background: var(--bleu); }
+.barre .f, .pastille.f { background: var(--rose); }
+.legende { font-size: 13px; color: var(--discret); display: flex; align-items: center; gap: 6px; }
+.pastille { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
+
+/* Messages */
+.alerte { background: #fff6e5; border: 1px solid #f3d49b; color: #7a4f00; padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; }
+.erreur { color: var(--rouge); font-weight: 600; }
+.succes { color: #0b6b4a; font-weight: 600; }
+.liste-erreurs { max-height: 260px; overflow-y: auto; font-size: 14px; }
+.requis { color: var(--rouge); }
+
+/* Formulaires et modales */
+.formulaire { display: flex; flex-direction: column; gap: 14px; }
+.formulaire > label, .grille-champs label { display: flex; flex-direction: column; gap: 5px; font-weight: 600; font-size: 14px; }
+.grille-champs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+.grille-champs .pleine { grid-column: 1 / -1; }
+.grille-champs label.case, label.case { flex-direction: row; align-items: center; gap: 8px; font-weight: 600; }
+.actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; align-items: center; margin-top: 6px; }
+.voile { position: fixed; inset: 0; background: rgba(8, 40, 34, 0.45); display: grid; place-items: center; z-index: 50; padding: 16px; }
+.modal { background: var(--blanc); border-radius: 18px; width: min(560px, 100%); max-height: 92vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2); }
+.modal.large { width: min(860px, 100%); }
+.modal-tete { display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1px solid var(--bord); }
+.modal-tete h3 { margin: 0; }
+.modal-corps { padding: 20px 24px; overflow-y: auto; }
+.fermer { background: none; border: 0; font-size: 28px; cursor: pointer; color: var(--discret); line-height: 1; }
+.identifiants { background: var(--vert-clair); padding: 14px 18px; border-radius: 12px; }
+.identifiants p { margin: 6px 0; }
+.fichier { cursor: pointer; }
+
+/* Connexion */
+.ecran-centre { min-height: 100vh; display: grid; place-items: center; padding: 20px; }
+.chargeur { width: 42px; height: 42px; border: 4px solid var(--vert-clair); border-top-color: var(--vert); border-radius: 50%; animation: tourne 0.8s linear infinite; }
+@keyframes tourne { to { transform: rotate(360deg); } }
+.page-connexion { min-height: 100vh; display: grid; grid-template-columns: 1.2fr 1fr; }
+.connexion-gauche { background: linear-gradient(150deg, var(--vert-fonce), var(--vert) 60%, #128a77); color: #e9f7f3; padding: 64px; display: flex; flex-direction: column; justify-content: center; gap: 12px; position: relative; overflow: hidden; }
+.connexion-gauche::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: linear-gradient(90deg, var(--orange-ivoire) 33%, #fff 33% 66%, #009e60 66%); }
+.connexion-gauche h1 { color: #fff; font-size: 38px; max-width: 560px; }
+.connexion-gauche p { max-width: 520px; font-size: 17px; line-height: 1.5; }
+.connexion-gauche .discret { color: #b8e0d6; }
+.connexion-gauche .marque { color: #fff; }
+.connexion-carte { align-self: center; justify-self: center; width: min(420px, 90%); display: flex; flex-direction: column; gap: 14px; }
+.connexion-carte label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
+
+/* Documents imprimables */
+.imprime-seul { display: none; }
+.document { margin-top: 10px; }
+.releve, .convocation { background: var(--blanc); border: 1px solid var(--bord); border-radius: var(--rayon); padding: 28px 34px; margin: 18px 0; max-width: 820px; }
+.entete-officiel { display: flex; justify-content: space-between; font-size: 12px; line-height: 1.45; gap: 20px; }
+.entete-officiel .droite { text-align: right; }
+.devise { font-style: italic; }
+.titre-doc { text-align: center; font-size: 18px; margin: 18px 0 14px; letter-spacing: 0.04em; }
+.infos-eleve { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 20px; margin-bottom: 14px; font-size: 14px; }
+.tableau.doc th, .tableau.doc td { border: 1px solid #b9cfc8; padding: 6px 10px; }
+.resultat-doc { display: flex; justify-content: space-between; margin: 14px 0; padding: 10px 14px; background: var(--vert-clair); border-radius: 10px; flex-wrap: wrap; gap: 10px; }
+.signatures { display: flex; justify-content: space-between; margin-top: 26px; font-size: 13px; font-weight: 700; min-height: 70px; gap: 20px; }
+.conv-grille { display: grid; gap: 8px; font-size: 15px; margin: 10px 0 14px; }
+.conv-grille .gros { font-size: 22px; letter-spacing: 0.05em; }
+.conv-note { font-size: 13px; border-top: 1px dashed var(--bord); padding-top: 10px; }
+.planche-cartes { display: grid; grid-template-columns: repeat(auto-fill, 85.6mm); gap: 6mm; margin-top: 16px; }
+.carte-scolaire { width: 85.6mm; height: 54mm; border: 1px solid #8fb8ad; border-radius: 3mm; padding: 2.5mm 3mm; background: linear-gradient(180deg, #fff 70%, #e9f6f2); font-size: 7.5pt; display: flex; flex-direction: column; overflow: hidden; break-inside: avoid; }
+.cs-tete { display: flex; justify-content: space-between; font-weight: 700; font-size: 6.5pt; color: var(--vert-fonce); border-bottom: 2px solid var(--orange-ivoire); padding-bottom: 1mm; }
+.cs-tete small { font-weight: 400; }
+.cs-annee { background: var(--vert); color: #fff; border-radius: 2mm; padding: 0.5mm 2mm; height: fit-content; }
+.cs-titre { text-align: center; font-weight: 800; letter-spacing: 0.15em; color: var(--vert); margin: 1mm 0; font-size: 8pt; }
+.cs-corps { display: flex; gap: 3mm; flex: 1; }
+.cs-photo { width: 21mm; height: 26mm; border: 1px dashed #8fb8ad; display: grid; place-items: center; color: #9bb; flex-shrink: 0; }
+.cs-photo img { width: 100%; height: 100%; object-fit: cover; }
+.cs-infos { display: flex; flex-direction: column; gap: 0.6mm; }
+.cs-nom { font-weight: 800; font-size: 9pt; color: var(--texte); }
+.cs-ecole { font-weight: 700; color: var(--vert-fonce); margin-top: auto; }
+.cs-pied { text-align: right; font-size: 6.5pt; font-style: italic; }
+
+/* Mobile */
+@media (max-width: 900px) {
+  .burger { display: block; }
+  .entete { padding: 10px 14px; }
+  .sep, .logo-iepp, .utilisateur-texte, .pastille-annee { display: none; }
+  .choix-iepp { max-width: 200px; }
+  .menu { position: fixed; left: 0; top: 0; height: 100vh; z-index: 40; transform: translateX(-100%); transition: transform 0.2s; box-shadow: 4px 0 30px rgba(0, 0, 0, 0.15); padding-top: 70px; }
+  .menu.ouvert { transform: none; }
+  .contenu { padding: 20px 16px 50px; }
+  .grille-champs, .deux-colonnes, .infos-eleve { grid-template-columns: 1fr; }
+  .page-connexion { grid-template-columns: 1fr; }
+  .connexion-gauche { padding: 36px 24px 44px; }
+  .connexion-gauche h1 { font-size: 26px; }
+  .connexion-carte { margin: 24px auto; }
+  .recherche { width: 100%; }
+  .choix-ligne label { min-width: 100%; }
+}
+
+/* Impression */
+@media print {
+  @page { size: A4; margin: 12mm; }
+  body { background: #fff; font-size: 12px; }
+  .entete, .menu, .non-imprime, .barre-outils, .onglets, .choix-ligne, .alerte, .btn, .btn-contour, .lien { display: none !important; }
+  .imprime-seul { display: block; }
+  span.imprime-seul { display: inline; }
+  .contenu { padding: 0; }
+  .tableau-cadre, .carte { border: 0; box-shadow: none; padding: 0; }
+  .tableau th { background: #eee !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .tableau td, .tableau th { border: 1px solid #999; padding: 4px 6px; }
+  .releve, .convocation { border: 0; padding: 0; margin: 0; max-width: none; break-after: page; }
+  .planche-convocations .convocation { break-after: auto; height: 132mm; border-bottom: 1px dashed #999; padding-top: 4mm; }
+  .planche-convocations .convocation:nth-child(2n) { break-after: page; border-bottom: 0; }
+  .planche-cartes { grid-template-columns: repeat(2, 85.6mm); gap: 5mm; justify-content: center; }
+  .carte-scolaire, .cs-annee, .cs-tete, .resultat-doc { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  input, select { border: 0; background: none; padding: 0; appearance: none; }
+  h1 { font-size: 20px; }
+}
