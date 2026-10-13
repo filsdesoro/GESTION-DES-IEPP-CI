@@ -78,6 +78,11 @@ export default function Releves() {
         {inscrits.length > 0 && <div className="barre-outils"><span className="discret">{inscrits.length} relevé(s)</span><div className="espace" /><button className="btn" onClick={() => window.print()}>Imprimer les relevés</button></div>}
       </div>
 
+      {(!classe || inscrits.length === 0) && (
+        <ApercuReleve iepp={iepp} annee={annee} compo={compo} ecole={ecole} classe={classe}
+          etat={{ ecoles: ecoles.length, compos: compos.length, classeChoisie: !!classe, eleves: inscrits.length }} />
+      )}
+
       {compo && classe && inscrits.map((i) => {
         const r = res[i.id];
         let total = 0;
@@ -129,6 +134,78 @@ export default function Releves() {
           </section>
         );
       })}
+    </div>
+  );
+}
+
+/** Modèle de relevé affiché tant qu'aucune classe avec élèves n'est choisie. */
+function ApercuReleve({ iepp, annee, compo, ecole, classe, etat }) {
+  const niveau = classe?.niveau_code || 'CM2';
+  const bareme = useBareme(niveau);
+  const matieres = bareme.length ? bareme : [
+    { id: 'a', libelle: 'Exploitation de texte', note_sur: 10, coefficient: 1 },
+    { id: 'b', libelle: 'Orthographe / Dictée', note_sur: 10, coefficient: 1 },
+    { id: 'c', libelle: 'Mathématiques', note_sur: 10, coefficient: 1 },
+    { id: 'd', libelle: 'EDHC', note_sur: 10, coefficient: 1 },
+    { id: 'e', libelle: 'Sciences et Technologie', note_sur: 10, coefficient: 1 },
+    { id: 'f', libelle: 'Histoire-Géographie', note_sur: 10, coefficient: 1 },
+  ];
+  const etapes = [
+    [etat.ecoles > 0, 'Des écoles enregistrées dans la circonscription', 'Menu Écoles → + Ajouter'],
+    [bareme.length > 0, `Le barème des matières du niveau ${niveau}`, 'Paramétrage circonscription → Barème des matières (superviseur)'],
+    [etat.compos > 0, 'Une composition programmée', 'Menu Compositions → Générer les compositions mensuelles'],
+    [etat.classeChoisie, 'Une classe choisie ci-dessus', 'Les classes se créent dans Écoles → Ouvrir → + Ajouter'],
+    [etat.eleves > 0, 'Des élèves inscrits dans la classe', 'Menu Élèves ou Importer'],
+    [false, 'Les notes saisies, moyennes calculées', 'Compositions → Saisir les notes → Enregistrer et calculer'],
+  ];
+  return (
+    <div className="non-imprime-sauf-apercu">
+      <div className="carte">
+        <h3>Pour obtenir les relevés de notes</h3>
+        <ul className="etapes">
+          {etapes.map(([ok, texte, aide]) => (
+            <li key={texte} className={ok ? 'fait' : ''}>
+              <span className="pastille-etape">{ok ? '✓' : '•'}</span>
+              <span><b>{texte}</b><br /><small className="discret">{aide}</small></span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <h2>Aperçu du modèle de relevé</h2>
+      <p className="discret">Exemple fictif montrant les différentes parties du relevé. Les vraies données apparaîtront à la place.</p>
+      <section className="document releve apercu">
+        <span className="etiquette-partie">1. En-tête officiel</span>
+        <EnTeteOfficiel iepp={iepp} ecole={ecole || { nom: 'EPP (nom de l’école)' }} droite={<div>Année scolaire {annee?.libelle}</div>} />
+        <span className="etiquette-partie">2. Titre</span>
+        <h2 className="titre-doc">RELEVÉ DE NOTES — {(compo ? libelleComposition(compo) : 'Composition du mois').toUpperCase()}</h2>
+        <span className="etiquette-partie">3. Identification de l’élève</span>
+        <div className="infos-eleve">
+          <div>Nom et prénoms : <b>NOM Prénoms</b></div>
+          <div>Classe : <b>{classe?.nom || niveau + ' A'}</b></div>
+          <div>Né(e) le : 01/01/2015 à (lieu)</div>
+          <div>Matricule : —</div>
+          <div>Sexe : F</div>
+          <div>Statut : Non redoublant(e)</div>
+        </div>
+        <span className="etiquette-partie">4. Notes par matière</span>
+        <table className="tableau doc">
+          <thead><tr><th>Matières</th><th>Note</th><th>Sur</th><th>Coef.</th><th>Points</th></tr></thead>
+          <tbody>
+            {matieres.map((m, k) => {
+              const note = Math.round(m.note_sur * (0.55 + ((k * 7) % 4) / 10));
+              return <tr key={m.id}><td>{m.libelle}</td><td>{fmt(note, 2)}</td><td>{m.note_sur}</td><td>{m.coefficient}</td><td>{fmt(note * m.coefficient, 2)}</td></tr>;
+            })}
+          </tbody>
+        </table>
+        <span className="etiquette-partie">5. Résultats</span>
+        <div className="resultat-doc">
+          <div>Moyenne : <b>6,50 / 10</b></div>
+          <div>Rang : <b>5e</b> sur 42</div>
+          <div>Appréciation : <b>{appreciation(6.5)}</b></div>
+        </div>
+        <span className="etiquette-partie">6. Signatures</span>
+        <div className="signatures"><div>Le maître</div><div>Le directeur</div><div>Signature du parent</div></div>
+      </section>
     </div>
   );
 }

@@ -251,3 +251,12 @@ input.note.abs { background: #fff4e0; color: #8a5a00; font-weight: 700; }
   h1 { font-size: 20px; }
 }
 .grille-mois { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 16px; }
+
+/* Aperçu du relevé */
+.etapes { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 10px; }
+.etapes li { display: flex; gap: 12px; align-items: flex-start; }
+.pastille-etape { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: #fdecea; color: var(--rouge); font-weight: 800; flex-shrink: 0; }
+.etapes li.fait .pastille-etape { background: #d5f3e8; color: #0b6b4a; }
+.releve.apercu { position: relative; border-style: dashed; }
+.etiquette-partie { display: inline-block; margin: 14px 0 4px; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--orange-ivoire); background: #fff4e0; padding: 2px 8px; border-radius: 6px; }
+@media print { .non-imprime-sauf-apercu { display: none !important; } }
