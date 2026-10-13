@@ -34,7 +34,7 @@ export default function EcoleDetail() {
   const equip = [['a_cantine', 'Cantine'], ['a_latrines', 'Latrines'], ['a_point_eau', "Point d'eau"], ['a_electricite', 'Électricité'], ['a_cloture', 'Clôture']];
 
   async function enregistrer(v) {
-    const autorises = champsEcole([]).map((c) => c.nom);
+    const autorises = champsEcole([]).map((c) => c.nom); // DRENA/IEPP non modifiables ici
     const maj = Object.fromEntries(Object.entries(v).filter(([k]) => autorises.includes(k)));
     const { error } = await supabase.from('ecoles').update(maj).eq('id', id);
     if (error) throw new Error(traduireErreur(error));

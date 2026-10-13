@@ -11,7 +11,7 @@ import Modal from './Modal.jsx';
 export default function Crud({
   titre, table, champs, filtre = {}, select = '*', ordre = 'nom', colonnes,
   lectureSeule = false, defauts = {}, avantSauvegarde, actionsLigne, enTete, rechercheSur,
-  titreFormulaire,
+  titreFormulaire, ajuster,
 }) {
   const [lignes, setLignes] = useState([]);
   const [chargement, setChargement] = useState(true);
@@ -49,7 +49,8 @@ export default function Crud({
   async function sauvegarder(valeurs) {
     let row = { ...valeurs };
     // On ne garde que les colonnes éditables
-    const autorisees = new Set([...champs.map((c) => c.nom), ...Object.keys(filtre), ...Object.keys(defauts)]);
+    const listeChamps = typeof champs === 'function' ? champs(valeurs) : champs;
+    const autorisees = new Set([...listeChamps.map((c) => c.nom), ...Object.keys(filtre), ...Object.keys(defauts)]);
     Object.keys(row).forEach((k) => { if (!autorisees.has(k) && k !== 'id') delete row[k]; });
     if (avantSauvegarde) row = await avantSauvegarde(row);
     let res;
@@ -113,15 +114,18 @@ export default function Crud({
           initial={edition}
           fermer={() => setEdition(null)}
           enregistrer={sauvegarder}
+          ajuster={ajuster}
         />
       )}
     </div>
   );
 }
 
-export function FormulaireModal({ titre, champs, initial, fermer, enregistrer, large, surChangement }) {
+export function FormulaireModal({ titre, champs, initial, fermer, enregistrer, large, surChangement, ajuster }) {
   const [valeurs, setValeursInterne] = useState(initial);
-  const setValeurs = (v) => { setValeursInterne(v); surChangement?.(v); };
+  const setValeurs = (v) => { const w = ajuster ? ajuster(v, valeurs) : v; setValeursInterne(w); surChangement?.(w); };
+  // champs peut être une fonction des valeurs saisies (listes liées)
+  const liste = typeof champs === 'function' ? champs(valeurs) : champs;
   const [erreur, setErreur] = useState('');
   const [envoi, setEnvoi] = useState(false);
   async function soumettre(e) {
@@ -132,9 +136,9 @@ export function FormulaireModal({ titre, champs, initial, fermer, enregistrer, l
     setEnvoi(false);
   }
   return (
-    <Modal titre={titre} fermer={fermer} large={large || champs.length > 8}>
+    <Modal titre={titre} fermer={fermer} large={large || liste.length > 8}>
       <form onSubmit={soumettre} className="formulaire">
-        <Champs champs={champs} valeurs={valeurs} changer={setValeurs} />
+        <Champs champs={liste} valeurs={valeurs} changer={setValeurs} />
         {erreur && <p className="erreur">{erreur}</p>}
         <div className="actions">
           <button type="button" className="btn-contour" onClick={fermer}>Annuler</button>

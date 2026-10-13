@@ -6,7 +6,7 @@ export default function Champs({ champs, valeurs, changer }) {
   return (
     <div className="grille-champs">
       {champs.map((c) => {
-        const v = valeurs[c.nom];
+        const v = valeurs[c.nom] ?? c.defaut;
         const maj = (val) => changer({ ...valeurs, [c.nom]: val });
         const classe = c.pleine || c.type === 'textarea' ? 'pleine' : '';
         if (c.type === 'checkbox') {
@@ -19,7 +19,7 @@ export default function Champs({ champs, valeurs, changer }) {
         let entree;
         if (c.type === 'select') {
           entree = (
-            <select value={v ?? ''} required={c.requis} onChange={(e) => maj(e.target.value === '' ? null : e.target.value)}>
+            <select value={v ?? ''} required={c.requis} disabled={c.desactive} onChange={(e) => maj(e.target.value === '' ? null : e.target.value)}>
               <option value="">{c.requis ? '— choisir —' : '—'}</option>
               {(c.options || []).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
