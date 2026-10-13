@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useApp } from './contexte.jsx';
 import { supabase } from './supabase';
 import { fmt, useListe } from './Choix.jsx';
-import { useCompositions } from './Compositions.jsx';
+import { ChoixComposition, useCompositions } from './Compositions.jsx';
 
 export default function SuiviSaisie() {
   const { ieppId, profil } = useApp();
@@ -13,7 +13,7 @@ export default function SuiviSaisie() {
   const [seulIncomplet, setSeulIncomplet] = useState(false);
   const secteurs = useListe('secteurs', { filtre: { iepp_id: ieppId }, ordre: 'nom' });
 
-  useEffect(() => { if (!compoId && compos.length) setCompoId(compos[compos.length - 1].id); }, [compos, compoId]);
+  useEffect(() => { if (!compoId && compos.length) setCompoId((compos.filter((c) => c.saisie_ouverte).pop() || compos[compos.length - 1]).id); }, [compos, compoId]);
   useEffect(() => {
     if (!compoId) return;
     supabase.from('v_suivi_saisie').select('*').eq('composition_id', compoId).order('ecole').then(({ data }) => setLignes(data || []));
@@ -42,11 +42,7 @@ export default function SuiviSaisie() {
     <div>
       <h1>Suivi de la saisie</h1>
       <div className="choix-ligne">
-        <label>Composition
-          <select value={compoId} onChange={(e) => setCompoId(e.target.value)}>
-            {compos.map((c) => <option key={c.id} value={c.id}>{c.libelle}</option>)}
-          </select>
-        </label>
+        <ChoixComposition compos={compos} valeur={compoId} changer={setCompoId} />
         {profil.role !== 'conseiller' && (
           <label>Secteur
             <select value={secteur} onChange={(e) => setSecteur(e.target.value)}>

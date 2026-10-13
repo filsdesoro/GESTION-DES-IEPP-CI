@@ -4,7 +4,7 @@ import { supabase, traduireErreur } from './supabase';
 import { OPTIONS } from './Formulaire.jsx';
 import { ChoixEcoleClasse, fmt, nomComplet } from './Choix.jsx';
 import { useInscrits } from './Eleves.jsx';
-import { useCompositions } from './Compositions.jsx';
+import { nomCourtComposition, useCompositions } from './Compositions.jsx';
 
 export default function BilanAnnuel() {
   const { annee, ieppId, role } = useApp();
@@ -25,7 +25,9 @@ function BilanClasse() {
   const { role } = useApp();
   const [choix, setChoix] = useState({ ecoleId: null, classeId: null });
   const [inscrits, recharger] = useInscrits(choix.classeId);
-  const [compos] = useCompositions();
+  const [toutes] = useCompositions();
+  // La moyenne annuelle se calcule sur les compositions mensuelles (pas les examens blancs)
+  const compos = toutes.filter((c) => c.type === 'mensuelle' || c.type === 'autre');
   const [res, setRes] = useState({});
   const [seuil, setSeuil] = useState(5);
   const [decisions, setDecisions] = useState({});
@@ -87,7 +89,7 @@ function BilanClasse() {
           {msg && <p className="succes">{msg}</p>}
           <div className="tableau-cadre">
             <table className="tableau">
-              <thead><tr><th>N°</th><th>Élève</th>{compos.map((c) => <th key={c.id}>{c.libelle}</th>)}<th>Moy. annuelle</th><th>Rang</th><th>Décision</th></tr></thead>
+              <thead><tr><th>N°</th><th>Élève</th>{compos.map((c) => <th key={c.id}>{nomCourtComposition(c)}</th>)}<th>Moy. annuelle</th><th>Rang</th><th>Décision</th></tr></thead>
               <tbody>
                 {lignes.length === 0 && <tr><td colSpan={compos.length + 5} className="vide">Aucun élève.</td></tr>}
                 {lignes.map(({ i, ma }, n) => (

@@ -3,7 +3,7 @@ import { useApp } from './contexte.jsx';
 import { supabase } from './supabase';
 import { ChoixEcoleClasse, dateFr, fmt, nomComplet, useEcoles } from './Choix.jsx';
 import { useInscrits } from './Eleves.jsx';
-import { useCompositions } from './Compositions.jsx';
+import { ChoixComposition, libelleComposition, useCompositions } from './Compositions.jsx';
 import { useBareme } from './SaisieNotes.jsx';
 
 export function appreciation(m) {
@@ -49,7 +49,7 @@ export default function Releves() {
   const [notes, setNotes] = useState({});
   const [res, setRes] = useState({});
 
-  useEffect(() => { if (!compoId && compos.length) setCompoId(compos[compos.length - 1].id); }, [compos, compoId]);
+  useEffect(() => { if (!compoId && compos.length) setCompoId((compos.filter((c) => c.saisie_ouverte).pop() || compos[compos.length - 1]).id); }, [compos, compoId]);
 
   useEffect(() => {
     if (!compoId || !inscrits.length) { setNotes({}); setRes({}); return; }
@@ -71,11 +71,7 @@ export default function Releves() {
       <h1 className="non-imprime">Relevés de notes</h1>
       <div className="non-imprime">
         <div className="choix-ligne">
-          <label>Composition
-            <select value={compoId} onChange={(e) => setCompoId(e.target.value)}>
-              {compos.map((c) => <option key={c.id} value={c.id}>{c.libelle}</option>)}
-            </select>
-          </label>
+          <ChoixComposition compos={compos} valeur={compoId} changer={setCompoId} />
         </div>
         <ChoixEcoleClasse valeur={choix} changer={(v, c) => { setChoix(v); setClasse(c); }} niveaux={compo?.niveaux} />
         {sansResultat && <p className="alerte">Les moyennes n'ont pas encore été calculées pour cette classe. Ouvrez la saisie des notes et cliquez sur « Enregistrer et calculer les moyennes ».</p>}
@@ -89,7 +85,7 @@ export default function Releves() {
         return (
           <section key={i.id} className="document releve">
             <EnTeteOfficiel iepp={iepp} ecole={ecole} droite={<div>Année scolaire {annee?.libelle}</div>} />
-            <h2 className="titre-doc">RELEVÉ DE NOTES — {compo.libelle.toUpperCase()}</h2>
+            <h2 className="titre-doc">RELEVÉ DE NOTES — {libelleComposition(compo).toUpperCase()}</h2>
             <div className="infos-eleve">
               <div>Nom et prénoms : <b>{nomComplet(i.eleves)}</b></div>
               <div>Classe : <b>{classe.nom}</b></div>

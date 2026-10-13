@@ -4,6 +4,7 @@ import { useApp } from './contexte.jsx';
 import { supabase, traduireErreur } from './supabase';
 import { ChoixEcoleClasse, fmt, nomComplet } from './Choix.jsx';
 import { useInscrits } from './Eleves.jsx';
+import { libelleComposition } from './Compositions.jsx';
 
 /** Matières évaluées pour un niveau, avec barème. */
 export function useBareme(niveau) {
@@ -107,7 +108,7 @@ export default function SaisieNotes() {
   return (
     <div>
       <p><Link to="/compositions">← Compositions</Link></p>
-      <h1>Saisie des notes — {compo.libelle}</h1>
+      <h1>Saisie des notes — {libelleComposition(compo)}</h1>
       {verrou && <div className="alerte">La saisie est fermée pour cette composition. Les notes sont en lecture seule.</div>}
       <ChoixEcoleClasse valeur={choix} niveaux={compo.niveaux} changer={(v, c) => { if (modifie && !confirm('Des notes non enregistrées seront perdues. Continuer ?')) return; setChoix(v); setClasse(c); }} />
       {!classe ? <p className="vide">Choisissez l'école et la classe.</p> : matieres.length === 0 ? (
