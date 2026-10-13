@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+﻿import { useNavigate } from 'react-router-dom';
 import { useApp } from './contexte.jsx';
 import Crud from './Crud.jsx';
 import { OPTIONS, libelle } from './Formulaire.jsx';
@@ -36,8 +36,6 @@ export function champsEcole(secteurs, rattachement, v = {}) {
     { nom: 'sous_prefecture', label: 'Sous-préfecture' },
     { nom: 'telephone', label: 'Téléphone', type: 'tel' },
     { nom: 'annee_creation', label: 'Année de création', type: 'number' },
-    { nom: 'latitude', label: 'Latitude (GPS)', type: 'number' },
-    { nom: 'longitude', label: 'Longitude (GPS)', type: 'number' },
     { nom: 'nb_salles', label: 'Nombre de salles', type: 'number' },
     { nom: 'nb_salles_bon_etat', label: 'Salles en bon état', type: 'number' },
     { nom: 'nb_tables_bancs', label: 'Tables-bancs', type: 'number' },
