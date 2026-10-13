@@ -54,6 +54,7 @@ input.moyen { width: 130px; }
 .logo-iepp { width: 40px; height: 40px; object-fit: contain; border-radius: 50%; }
 .choix-iepp { border-radius: 999px; padding: 8px 16px; border: 1px solid var(--bord); background: var(--vert-clair); color: var(--vert-fonce); font-weight: 700; max-width: 360px; }
 .choix-iepp.fixe { display: inline-block; }
+.choix-drena { background: #fff4e0; color: #8a5a00; max-width: 240px; }
 .pastille-annee { background: #fff4e0; color: #8a5a00; border-radius: 999px; padding: 5px 12px; font-weight: 700; font-size: 13px; }
 .espace { flex: 1; }
 .utilisateur { display: flex; align-items: center; gap: 10px; }
@@ -215,7 +216,7 @@ input.note.abs { background: #fff4e0; color: #8a5a00; font-weight: 700; }
   .burger { display: block; }
   .entete { padding: 10px 14px; }
   .sep, .logo-iepp, .utilisateur-texte, .pastille-annee { display: none; }
-  .choix-iepp { max-width: 200px; }
+  .choix-iepp { max-width: 46vw; }
   .menu { position: fixed; left: 0; top: 0; height: 100vh; z-index: 40; transform: translateX(-100%); transition: transform 0.2s; box-shadow: 4px 0 30px rgba(0, 0, 0, 0.15); padding-top: 70px; }
   .menu.ouvert { transform: none; }
   .contenu { padding: 20px 16px 50px; }

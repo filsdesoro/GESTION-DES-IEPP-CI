@@ -108,6 +108,7 @@ function DrenaIepp() {
             { nom: 'code', label: 'Code' },
             { nom: 'localite', label: 'Localité' },
           ]}
+          rechercheSur={['nom', (l) => l.drena?.nom]}
           colonnes={[{ cle: 'nom', label: 'Circonscription' }, { cle: 'drena', label: 'DRENA', rendu: (l) => l.drena?.nom }]}
           avantSauvegarde={async (r) => { setTimeout(recharger, 400); return r; }}
         />

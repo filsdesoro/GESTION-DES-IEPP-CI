@@ -21,10 +21,7 @@ export default function Layout({ menu, children }) {
         <div className="sep" />
         {iepp?.logo_url && <img className="logo-iepp" src={iepp.logo_url} alt="" />}
         {role === 'superviseur' ? (
-          <select className="choix-iepp" value={ieppId || ''} onChange={(e) => setIeppId(e.target.value)}>
-            {iepps.length === 0 && <option value="">Aucune circonscription</option>}
-            {iepps.map((i) => <option key={i.id} value={i.id}>{i.nom}</option>)}
-          </select>
+          <ChoixDrenaIepp iepps={iepps} iepp={iepp} ieppId={ieppId} setIeppId={setIeppId} />
         ) : (
           <div className="choix-iepp fixe">{iepp?.nom || '—'}</div>
         )}
@@ -58,6 +55,33 @@ export default function Layout({ menu, children }) {
       </div>
       {mdp && <ChangerMotDePasse fermer={() => setMdp(false)} />}
     </div>
+  );
+}
+
+/** Deux listes déroulantes liées : DRENA puis IEPP de cette DRENA. */
+function ChoixDrenaIepp({ iepps, iepp, ieppId, setIeppId }) {
+  const drenas = [...new Map(iepps.map((i) => [i.drena_id, i.drena?.nom || '—'])).entries()]
+    .sort((a, b) => a[1].localeCompare(b[1], 'fr', { numeric: true }));
+  const [drenaId, setDrenaId] = useState(iepp?.drena_id || '');
+  const drenaCourante = drenaId || iepp?.drena_id || '';
+  const liste = iepps.filter((i) => i.drena_id === drenaCourante)
+    .sort((a, b) => a.nom.localeCompare(b.nom, 'fr', { numeric: true }));
+
+  if (iepps.length === 0) return <select className="choix-iepp" disabled><option>Aucune circonscription</option></select>;
+  return (
+    <>
+      <select className="choix-iepp choix-drena" title="DRENA" value={drenaCourante}
+        onChange={(e) => {
+          setDrenaId(e.target.value);
+          const premiere = iepps.filter((i) => i.drena_id === e.target.value).sort((a, b) => a.nom.localeCompare(b.nom, 'fr', { numeric: true }))[0];
+          if (premiere) setIeppId(premiere.id);
+        }}>
+        {drenas.map(([id, nom]) => <option key={id} value={id}>{nom}</option>)}
+      </select>
+      <select className="choix-iepp" title="Circonscription (IEPP)" value={ieppId || ''} onChange={(e) => setIeppId(e.target.value)}>
+        {liste.map((i) => <option key={i.id} value={i.id}>{i.nom}</option>)}
+      </select>
+    </>
   );
 }
 

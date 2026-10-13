@@ -43,7 +43,7 @@ export default function Crud({
     const t = recherche.trim().toLowerCase();
     if (!t) return lignes;
     const cles = rechercheSur || colonnes.map((c) => c.cle);
-    return lignes.filter((l) => cles.some((k) => String(l[k] ?? '').toLowerCase().includes(t)));
+    return lignes.filter((l) => cles.some((k) => String((typeof k === 'function' ? k(l) : l[k]) ?? '').toLowerCase().includes(t)));
   }, [lignes, recherche, colonnes, rechercheSur]);
 
   async function sauvegarder(valeurs) {
