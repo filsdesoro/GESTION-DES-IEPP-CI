@@ -39,6 +39,7 @@ export default function Secteurs() {
   return (
     <Crud titre="Secteurs pédagogiques" table="secteurs" filtre={{ iepp_id: ieppId }} lectureSeule={!peutGerer}
       select="*, conseiller:personnel(nom, prenoms, telephone)"
+      choixListe={{ tous: 'Tous les secteurs pédagogiques', libelle: (l) => l.nom }}
       champs={[
         { nom: 'nom', label: 'Nom du secteur', requis: true },
         { nom: 'conseiller_id', label: 'Conseiller pédagogique', type: 'select', options, aide: 'Le conseiller doit être enregistré dans Personnel.' },

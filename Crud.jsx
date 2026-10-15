@@ -11,7 +11,7 @@ import Modal from './Modal.jsx';
 export default function Crud({
   titre, table, champs, filtre = {}, select = '*', ordre = 'nom', colonnes,
   lectureSeule = false, defauts = {}, avantSauvegarde, actionsLigne, enTete, rechercheSur,
-  titreFormulaire, ajuster,
+  titreFormulaire, ajuster, choixListe,
 }) {
   const [lignes, setLignes] = useState([]);
   const [chargement, setChargement] = useState(true);
@@ -40,11 +40,12 @@ export default function Crud({
   useEffect(() => { charger(); }, [charger]);
 
   const filtrees = useMemo(() => {
+    if (choixListe) return recherche ? lignes.filter((l) => l.id === recherche) : lignes;
     const t = recherche.trim().toLowerCase();
     if (!t) return lignes;
     const cles = rechercheSur || colonnes.map((c) => c.cle);
     return lignes.filter((l) => cles.some((k) => String((typeof k === 'function' ? k(l) : l[k]) ?? '').toLowerCase().includes(t)));
-  }, [lignes, recherche, colonnes, rechercheSur]);
+  }, [lignes, recherche, colonnes, rechercheSur, choixListe]);
 
   async function sauvegarder(valeurs) {
     let row = { ...valeurs };
@@ -77,7 +78,15 @@ export default function Crud({
       {titre && <h1>{titre}</h1>}
       {enTete}
       <div className="barre-outils">
-        <input className="recherche" placeholder="Rechercher…" value={recherche} onChange={(e) => setRecherche(e.target.value)} />
+        {choixListe ? (
+          <select className="recherche" value={recherche} onChange={(e) => setRecherche(e.target.value)} aria-label={choixListe.tous}>
+            <option value="">{choixListe.tous}</option>
+            {[...lignes].sort((a, b) => choixListe.libelle(a).localeCompare(choixListe.libelle(b), 'fr', { numeric: true }))
+              .map((l) => <option key={l.id} value={l.id}>{choixListe.libelle(l)}</option>)}
+          </select>
+        ) : (
+          <input className="recherche" placeholder="Rechercher…" value={recherche} onChange={(e) => setRecherche(e.target.value)} />
+        )}
         <span className="discret">{filtrees.length} élément(s)</span>
         <div className="espace" />
         {!lectureSeule && <button className="btn" onClick={() => setEdition({ ...defauts, ...filtre })}>+ Ajouter</button>}
