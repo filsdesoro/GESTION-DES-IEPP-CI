@@ -20,6 +20,7 @@ export function AppProvider({ children }) {
   const [annee, setAnnee] = useState(null);
   const [chargement, setChargement] = useState(true);
   const [erreurProfil, setErreurProfil] = useState('');
+  const [abonnementActif, setAbonnementActif] = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
@@ -60,6 +61,13 @@ export function AppProvider({ children }) {
     setIeppIdState(choisi);
     const { data: a } = await supabase.from('annees_scolaires').select('*').eq('active', true).maybeSingle();
     setAnnee(a || null);
+    // Abonnement de l'année active (le superviseur n'est jamais bloqué)
+    let actif = true;
+    if (p.role !== 'superviseur' && p.iepp_id && a) {
+      const { data: ok, error: e } = await supabase.rpc('abonnement_actif', { p_iepp: p.iepp_id });
+      actif = e ? true : !!ok; // fonction absente (script 005 non lancé) : pas de blocage
+    }
+    setAbonnementActif(actif);
     setChargement(false);
   }, [session]);
 
@@ -76,7 +84,7 @@ export function AppProvider({ children }) {
 
   const valeur = {
     session, profil, role, iepps, iepp, ieppId, setIeppId, annee, chargement, erreurProfil,
-    peutGerer, recharger,
+    peutGerer, recharger, abonnementActif,
     deconnexion: () => supabase.auth.signOut(),
   };
   return <Ctx.Provider value={valeur}>{children}</Ctx.Provider>;

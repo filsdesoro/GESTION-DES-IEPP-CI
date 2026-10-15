@@ -329,3 +329,22 @@ input.note.abs { background: #fff4e0; color: #8a5a00; font-weight: 700; }
   .grille-stats { grid-template-columns: repeat(4, 1fr); }
   .extremes { break-inside: avoid; }
 }
+
+/* Abonnements */
+.fond-abonnement { background: linear-gradient(160deg, #e9f5f0, #fff7ea); }
+.abonnement-bloque { max-width: 680px; width: 100%; }
+.abonnement-bloque h1 { margin: 14px 0 6px; }
+.abonnement-bloque .tarif { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 18px; margin: 16px 0; border-radius: var(--rayon); background: #fff4e0; color: #8a5a00; }
+.abonnement-bloque .tarif strong { font-size: 32px; color: #6b4500; }
+.abonnement-bloque .instructions { white-space: pre-line; }
+.abonnement-bloque form { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--bord); }
+.abonnement-bloque form h3 { margin: 0 0 10px; }
+.etat-declaration { display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; border-radius: 10px; margin: 12px 0; }
+.etat-declaration.orange { background: #fff0d9; color: #7a4d00; }
+.etat-declaration.rouge { background: #fde2df; color: #8f251b; }
+.etat-declaration.vert { background: #d5f3e8; color: #0b6b4a; }
+.pied-abonnement { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--bord); }
+.carte.stat.orange strong { color: #b26a00; }
+.btn.petit, .btn-contour.petit { padding: 6px 12px; font-size: 13px; }
+.actions-ligne { white-space: nowrap; text-align: right; }
+.actions-ligne > * + * { margin-left: 8px; }

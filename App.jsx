@@ -23,6 +23,7 @@ import FichesEPS from './FichesEPS.jsx';
 import CEPE from './CEPE.jsx';
 import Importer from './Importer.jsx';
 import Comptes from './Comptes.jsx';
+import Abonnements, { AbonnementBloque } from './Abonnements.jsx';
 
 const TOUS = ['superviseur', 'iepp', 'conseiller', 'directeur', 'saisie'];
 const GESTION = ['superviseur', 'iepp'];
@@ -47,10 +48,11 @@ export const MENU = [
   { chemin: '/cepe', titre: 'Convocations CEPE', roles: TOUS, el: <CEPE /> },
   { chemin: '/importer', titre: 'Importer', roles: ['superviseur', 'iepp', 'directeur', 'saisie'], el: <Importer /> },
   { chemin: '/comptes', titre: 'Comptes utilisateurs', roles: GESTION, el: <Comptes /> },
+  { chemin: '/abonnements', titre: 'Abonnements', roles: ['superviseur'], el: <Abonnements /> },
 ];
 
 export default function App() {
-  const { session, profil, role, chargement, erreurProfil, deconnexion } = useApp();
+  const { session, profil, role, chargement, erreurProfil, deconnexion, abonnementActif } = useApp();
 
   if (!configOk) {
     return (
@@ -76,6 +78,8 @@ export default function App() {
       </div>
     );
   }
+
+  if (role !== 'superviseur' && !abonnementActif) return <AbonnementBloque />;
 
   const autorises = MENU.filter((m) => m.roles.includes(role));
   return (
