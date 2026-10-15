@@ -70,7 +70,7 @@ export default function App() {
     return (
       <div className="ecran-centre">
         <div className="carte" style={{ maxWidth: 480 }}>
-          <h2>Accès impossible</h2>
+          <h2>{/suspendu|désactivé/i.test(erreurProfil) ? 'Compte bloqué' : 'Accès impossible'}</h2>
           <p>{erreurProfil}</p>
           <p className="discret">Demandez à votre inspecteur ou au superviseur de vérifier votre compte.</p>
           <button className="btn" onClick={deconnexion}>Se déconnecter</button>

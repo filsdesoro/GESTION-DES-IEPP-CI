@@ -5,6 +5,12 @@ import { FormulaireModal } from './Crud.jsx';
 import Modal from './Modal.jsx';
 import { useListe } from './Choix.jsx';
 
+const MOTIFS = [
+  'Compte suspendu pour non-paiement de l\'abonnement.',
+  'Compte suspendu : paiement de l\'abonnement en cours de vérification.',
+  'Compte suspendu par l\'administrateur.',
+];
+
 function motDePasseProvisoire() {
   const c = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
   const a = new Uint32Array(10);
@@ -72,9 +78,22 @@ export default function Comptes() {
     charger();
   }
 
+  const [blocage, setBlocage] = useState(null);
   async function basculer(c) {
-    const { error } = await supabase.from('profils').update({ actif: !c.actif }).eq('id', c.id);
+    if (c.actif) return setBlocage({ compte: c, motif: MOTIFS[0] });
+    const { error } = await supabase.from('profils').update({ actif: true, motif_blocage: null }).eq('id', c.id);
     if (error) setMsg(traduireErreur(error));
+    charger();
+  }
+  async function bloquer(e) {
+    e.preventDefault();
+    const { error } = await supabase.from('profils').update({ actif: false, motif_blocage: blocage.motif?.trim() || null }).eq('id', blocage.compte.id);
+    if (error) {
+      // colonne motif absente (script 009 non lancé) : on bloque quand même
+      const r = await supabase.from('profils').update({ actif: false }).eq('id', blocage.compte.id);
+      if (r.error) setMsg(traduireErreur(r.error));
+    }
+    setBlocage(null);
     charger();
   }
 
@@ -117,13 +136,13 @@ export default function Comptes() {
                 <td>{emails[c.id] || <span className="discret">—</span>}</td>
                 <td>{ROLES[c.role]}</td>
                 <td>{portee(c)}</td>
-                <td>{c.actif ? <span className="badge vert">Actif</span> : <span className="badge gris">Désactivé</span>}</td>
+                <td>{c.actif ? <span className="badge vert">Actif</span> : <><span className="badge rouge">Bloqué</span>{c.motif_blocage && <div className="discret">{c.motif_blocage}</div>}</>}</td>
                 <td className="actions-ligne">
                   {c.id !== profil.id && (role === 'superviseur' || c.role !== 'superviseur') && (
                     <>
                       <button className="lien" onClick={() => setEdition({ ...c })}>Modifier</button>
                       <button className="lien" onClick={() => reinitialiser(c)}>Nouveau mot de passe</button>
-                      <button className="lien" onClick={() => basculer(c)}>{c.actif ? 'Désactiver' : 'Activer'}</button>
+                      <button className="lien" onClick={() => basculer(c)}>{c.actif ? 'Bloquer' : 'Débloquer'}</button>
                       <button className="lien danger" onClick={() => supprimer(c)}>Supprimer</button>
                     </>
                   )}
@@ -134,6 +153,26 @@ export default function Comptes() {
         </table>
       </div>
       {edition && <FormulaireModal titre={edition.id ? 'Modifier le compte' : 'Créer un compte'} champs={champs} initial={edition} fermer={() => setEdition(null)} enregistrer={enregistrer} surChangement={setEdition} key={edition.id || 'nouveau'} />}
+      {blocage && (
+        <Modal titre={`Bloquer ${blocage.compte.nom_complet}`} fermer={() => setBlocage(null)}>
+          <form className="formulaire" onSubmit={bloquer}>
+            <p className="discret">La personne ne pourra plus se connecter et verra le message ci-dessous.</p>
+            <label><span>Motif</span>
+              <select value={MOTIFS.includes(blocage.motif) ? blocage.motif : ''} onChange={(e) => setBlocage({ ...blocage, motif: e.target.value })}>
+                {MOTIFS.map((m) => <option key={m} value={m}>{m}</option>)}
+                <option value="">Autre motif…</option>
+              </select>
+            </label>
+            <label><span>Message affiché à l'utilisateur</span>
+              <textarea rows={3} value={blocage.motif} onChange={(e) => setBlocage({ ...blocage, motif: e.target.value })} />
+            </label>
+            <div className="actions">
+              <button type="button" className="btn-contour" onClick={() => setBlocage(null)}>Annuler</button>
+              <button className="btn danger">Bloquer le compte</button>
+            </div>
+          </form>
+        </Modal>
+      )}
       {identifiants && (
         <Modal titre="Identifiants à communiquer" fermer={() => setIdentifiants(null)}>
           <div className="identifiants">

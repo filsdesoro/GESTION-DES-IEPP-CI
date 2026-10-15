@@ -44,7 +44,8 @@ export function AppProvider({ children }) {
       return;
     }
     if (!p.actif) {
-      setErreurProfil('Ce compte est désactivé.');
+      const { data: cfg } = await supabase.from('config_abonnement').select('contact').eq('id', 1).maybeSingle();
+      setErreurProfil(`${p.motif_blocage || 'Ce compte est désactivé.'}${cfg?.contact ? ` Contact : ${cfg.contact}.` : ''}`);
       setProfil(null);
       setChargement(false);
       return;

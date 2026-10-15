@@ -357,3 +357,4 @@ input.champ-id { font-size: 17px; text-transform: uppercase; }
 .code-mini { margin-top: 4px; font-size: 13px; }
 .badge.bleu { background: #e0ecff; color: #1f4f9a; }
 .etat-declaration.bleu { background: #e0ecff; color: #1f4f9a; }
+.btn.danger { background: #b3261e; border-color: #b3261e; }
