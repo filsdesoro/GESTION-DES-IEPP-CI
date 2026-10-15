@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ROLES, useApp } from './contexte.jsx';
-import { API_URL, api, supabase, traduireErreur } from './supabase';
+import { supabase, traduireErreur } from './supabase';
 import { FormulaireModal } from './Crud.jsx';
 import Modal from './Modal.jsx';
 import { useListe } from './Choix.jsx';
@@ -30,9 +30,8 @@ export default function Comptes() {
     const { data, error } = await q;
     if (error) setMsg(traduireErreur(error));
     setComptes(data || []);
-    if (API_URL) {
-      try { const r = await api('/api/comptes'); setEmails(Object.fromEntries(r.comptes.map((c) => [c.id, c.email]))); } catch { /* serveur endormi : emails masqués */ }
-    }
+    const { data: em } = await supabase.rpc('comptes_emails');
+    setEmails(Object.fromEntries((em || []).map((c) => [c.id, c.email])));
   }, [role, ieppId]);
   useEffect(() => { charger(); }, [charger]);
 
@@ -62,7 +61,11 @@ export default function Comptes() {
       if (error) throw new Error(traduireErreur(error));
     } else {
       if (String(v.mot_de_passe).length < 8) throw new Error('Le mot de passe doit contenir au moins 8 caractères.');
-      await api('/api/comptes', { method: 'POST', body: JSON.stringify({ ...p, email: v.email.trim().toLowerCase(), mot_de_passe: v.mot_de_passe }) });
+      const { error } = await supabase.rpc('creer_compte', {
+        p_email: v.email.trim().toLowerCase(), p_mot_de_passe: v.mot_de_passe, p_nom_complet: p.nom_complet, p_role: p.role,
+        p_iepp: p.iepp_id, p_secteur: p.secteur_id, p_ecole: p.ecole_id,
+      });
+      if (error) throw new Error(traduireErreur(error));
       setIdentifiants({ nom: p.nom_complet, email: v.email.trim().toLowerCase(), mdp: v.mot_de_passe });
     }
     setEdition(null);
@@ -78,15 +81,15 @@ export default function Comptes() {
   async function reinitialiser(c) {
     const mdp = motDePasseProvisoire();
     if (!confirm(`Générer un nouveau mot de passe pour ${c.nom_complet} ?`)) return;
-    try {
-      await api(`/api/comptes/${c.id}/mot-de-passe`, { method: 'POST', body: JSON.stringify({ mot_de_passe: mdp }) });
-      setIdentifiants({ nom: c.nom_complet, email: emails[c.id] || '', mdp });
-    } catch (e) { setMsg(e.message); }
+    const { error } = await supabase.rpc('changer_mot_de_passe_compte', { p_id: c.id, p_mot_de_passe: mdp });
+    if (error) return setMsg(traduireErreur(error));
+    setIdentifiants({ nom: c.nom_complet, email: emails[c.id] || '', mdp });
   }
 
   async function supprimer(c) {
     if (!confirm(`Supprimer définitivement le compte de ${c.nom_complet} ?`)) return;
-    try { await api(`/api/comptes/${c.id}`, { method: 'DELETE' }); charger(); } catch (e) { setMsg(e.message); }
+    const { error } = await supabase.rpc('supprimer_compte', { p_id: c.id });
+    if (error) setMsg(traduireErreur(error)); else charger();
   }
 
   const nomIepp = (id) => iepps.find((i) => i.id === id)?.nom || '';
@@ -98,11 +101,10 @@ export default function Comptes() {
   return (
     <div>
       <h1>Comptes utilisateurs</h1>
-      {!API_URL && <div className="alerte">Le serveur n'est pas configuré : la création de comptes et la réinitialisation des mots de passe sont indisponibles.</div>}
       <div className="barre-outils">
         <span className="discret">{comptes.length} compte(s)</span>
         <div className="espace" />
-        <button className="btn" disabled={!API_URL} onClick={() => setEdition({ role: rolesPermis[rolesPermis.length - 2] || 'directeur', iepp_id: ieppId, mot_de_passe: motDePasseProvisoire() })}>+ Créer un compte</button>
+        <button className="btn" onClick={() => setEdition({ role: rolesPermis[rolesPermis.length - 2] || 'directeur', iepp_id: ieppId, mot_de_passe: motDePasseProvisoire() })}>+ Créer un compte</button>
       </div>
       {msg && <p className="erreur">{msg}</p>}
       <div className="tableau-cadre">

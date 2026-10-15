@@ -66,7 +66,7 @@ export default function TableauBord() {
       )}
       <div className="pile-etats">
         <Etat titre="Site" sous="Hébergé sur Vercel" etat texteOk="En ligne" />
-        <Etat titre="Serveur" sous="Hébergé sur Render" etat={serveur} texteOk="Connecté" texteKo={API_URL ? 'Injoignable' : 'Non configuré'} />
+        {API_URL && <Etat titre="Serveur" sous="Hébergé sur Render" etat={serveur} texteOk="Connecté" texteKo="Injoignable" />}
         <Etat titre="Base de données" sous="Hébergée sur Supabase" etat={base} texteOk="Connectée" texteKo="Injoignable" />
       </div>
       <button className="btn" onClick={verifier}>Vérifier à nouveau</button>
