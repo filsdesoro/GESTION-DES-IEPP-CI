@@ -35,7 +35,8 @@ export default function Comptes() {
     if (role === 'iepp') q = q.eq('iepp_id', ieppId);
     const { data, error } = await q;
     if (error) setMsg(traduireErreur(error));
-    setComptes(data || []);
+    const attente = (c) => (!c.actif && /attente de validation/i.test(c.motif_blocage || '') ? 0 : 1);
+    setComptes((data || []).sort((a, b) => attente(a) - attente(b)));
     const { data: em } = await supabase.rpc('comptes_emails');
     setEmails(Object.fromEntries((em || []).map((c) => [c.id, c.email])));
   }, [role, ieppId]);
@@ -120,6 +121,9 @@ export default function Comptes() {
   return (
     <div>
       <h1>Comptes utilisateurs</h1>
+      {comptes.some((c) => !c.actif && /attente de validation/i.test(c.motif_blocage || '')) && (
+        <div className="alerte">{comptes.filter((c) => !c.actif && /attente de validation/i.test(c.motif_blocage || '')).length} compte(s) créé(s) depuis la page de connexion attendent votre validation : vérifiez la personne puis cliquez sur « Valider ».</div>
+      )}
       <div className="barre-outils">
         <span className="discret">{comptes.length} compte(s)</span>
         <div className="espace" />
@@ -133,16 +137,16 @@ export default function Comptes() {
             {comptes.map((c) => (
               <tr key={c.id}>
                 <td><b>{c.nom_complet}</b></td>
-                <td>{emails[c.id] || <span className="discret">—</span>}</td>
+                <td>{emails[c.id]?.endsWith('@tel.gestion-iepp.ci') ? <>Tél. {emails[c.id].split('@')[0]}</> : emails[c.id] || <span className="discret">—</span>}{c.telephone && !emails[c.id]?.startsWith(c.telephone.replace(/[^0-9]/g, '')) && <div className="discret">Tél. {c.telephone}</div>}</td>
                 <td>{ROLES[c.role]}</td>
                 <td>{portee(c)}</td>
-                <td>{c.actif ? <span className="badge vert">Actif</span> : <><span className="badge rouge">Bloqué</span>{c.motif_blocage && <div className="discret">{c.motif_blocage}</div>}</>}</td>
+                <td>{c.actif ? <span className="badge vert">Actif</span> : /attente de validation/i.test(c.motif_blocage || '') ? <span className="badge orange">À valider</span> : <><span className="badge rouge">Bloqué</span>{c.motif_blocage && <div className="discret">{c.motif_blocage}</div>}</>}</td>
                 <td className="actions-ligne">
                   {c.id !== profil.id && (role === 'superviseur' || c.role !== 'superviseur') && (
                     <>
                       <button className="lien" onClick={() => setEdition({ ...c })}>Modifier</button>
                       <button className="lien" onClick={() => reinitialiser(c)}>Nouveau mot de passe</button>
-                      <button className="lien" onClick={() => basculer(c)}>{c.actif ? 'Bloquer' : 'Débloquer'}</button>
+                      <button className="lien" onClick={() => basculer(c)}>{c.actif ? 'Bloquer' : /attente de validation/i.test(c.motif_blocage || '') ? 'Valider' : 'Débloquer'}</button>
                       <button className="lien danger" onClick={() => supprimer(c)}>Supprimer</button>
                     </>
                   )}

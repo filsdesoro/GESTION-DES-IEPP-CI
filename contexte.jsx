@@ -45,7 +45,8 @@ export function AppProvider({ children }) {
     }
     if (!p.actif) {
       const { data: cfg } = await supabase.from('config_abonnement').select('contact').eq('id', 1).maybeSingle();
-      setErreurProfil(`${p.motif_blocage || 'Ce compte est désactivé.'}${cfg?.contact ? ` Contact : ${cfg.contact}.` : ''}`);
+      const enAttente = /attente de validation/i.test(p.motif_blocage || '');
+      setErreurProfil(`${p.motif_blocage || 'Ce compte est désactivé.'}${cfg?.contact && !enAttente ? ` Contact : ${cfg.contact}.` : ''}`);
       setProfil(null);
       setChargement(false);
       return;
