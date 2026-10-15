@@ -1,3 +1,28 @@
+import { useState } from 'react';
+
+const AUTRE = '__autre__';
+
+/** Liste déroulante avec une dernière option « Autre… » qui permet de saisir un nom absent de la liste. */
+function ListeLibre({ valeur, options, requis, changer }) {
+  const [libre, setLibre] = useState(!!valeur && !options.includes(valeur));
+  if (libre) {
+    return (
+      <div className="liste-libre">
+        <input autoFocus value={valeur ?? ''} required={requis} placeholder="Saisir le nom…" onChange={(e) => changer(e.target.value || null)} />
+        {options.length > 0 && <button type="button" className="lien" onClick={() => { setLibre(false); changer(null); }}>← revenir à la liste</button>}
+      </div>
+    );
+  }
+  return (
+    <select value={valeur ?? ''} required={requis}
+      onChange={(e) => { if (e.target.value === AUTRE) { setLibre(true); changer(null); } else changer(e.target.value || null); }}>
+      <option value="">— choisir dans la liste —</option>
+      {options.map((o) => <option key={o} value={o}>{o}</option>)}
+      <option value={AUTRE}>✎ Autre nom (à saisir)…</option>
+    </select>
+  );
+}
+
 /**
  * Rendu générique de champs de formulaire.
  * champ = { nom, label, type, options:[{value,label}], requis, pleine, aide }
@@ -24,6 +49,8 @@ export default function Champs({ champs, valeurs, changer }) {
               {(c.options || []).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           );
+        } else if (c.type === 'liste-libre') {
+          entree = <ListeLibre valeur={v} options={c.options || []} requis={c.requis} changer={maj} />;
         } else if (c.type === 'textarea') {
           entree = <textarea rows={3} value={v ?? ''} onChange={(e) => maj(e.target.value)} />;
         } else {
