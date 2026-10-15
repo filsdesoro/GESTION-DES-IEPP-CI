@@ -15,7 +15,8 @@ export const MODES = [
 ];
 const libelleMode = (m) => MODES.find((x) => x[0] === m)?.[1] || m || '';
 const fcfa = (n, devise = 'FCFA') => `${Number(n || 0).toLocaleString('fr-FR')} ${devise}`;
-const ETATS = { valide: ['Payé', 'vert'], en_attente: ['En attente de validation', 'orange'], refuse: ['Refusé', 'rouge'] };
+const ETATS = { valide: ['Actif', 'vert'], paye: ['Payé — code à saisir', 'bleu'], en_attente: ['En attente de validation', 'orange'], refuse: ['Refusé', 'rouge'] };
+const groupe = (statut) => (statut === 'paye' ? 'valide' : statut);
 
 function useConfig() {
   const [config, setConfig] = useState(null);
@@ -41,7 +42,7 @@ export function AbonnementBloque() {
     if (!profil?.iepp_id || !annee) return;
     const { data } = await supabase.from('abonnements').select('*').eq('iepp_id', profil.iepp_id).eq('annee_id', annee.id).maybeSingle();
     setDeclaration(data || null);
-    if (data && data.statut !== 'valide') setV({ mode: data.mode, reference: data.reference || '', telephone: data.telephone || '' });
+    if (data && !['valide', 'paye'].includes(data.statut)) setV({ mode: data.mode, reference: data.reference || '', telephone: data.telephone || '' });
   }, [profil, annee]);
   useEffect(() => { charger(); }, [charger]);
 
@@ -60,8 +61,21 @@ export function AbonnementBloque() {
       setTimeout(recharger, 1500);
       return;
     }
-    setMsg('attente');
+    setMsg(data === 'code' ? '' : 'attente');
     charger();
+  }
+
+  const [code, setCode] = useState('');
+  async function saisirCode(e) {
+    e.preventDefault();
+    setMsg('');
+    if (!code.trim()) return setMsg("Saisissez le code d'activation.");
+    setEnvoi(true);
+    const { error } = await supabase.rpc('utiliser_code_activation', { p_code: code.trim() });
+    setEnvoi(false);
+    if (error) return setMsg(traduireErreur(error));
+    setMsg('active');
+    setTimeout(recharger, 1500);
   }
 
   const etat = declaration ? ETATS[declaration.statut] : null;
@@ -83,7 +97,9 @@ export function AbonnementBloque() {
           </div>
         )}
 
-        {role !== 'iepp' ? (
+        {role !== 'iepp' && declaration?.statut === 'paye' ? (
+          <div className="alerte">Le paiement de votre circonscription est confirmé. L'inspecteur doit maintenant saisir le code d'activation pour ouvrir l'accès.</div>
+        ) : role !== 'iepp' ? (
           <div className="alerte">
             Seul l'inspecteur (compte IEPP) peut régler l'abonnement. Merci de le contacter.
             {config?.contact && <> Gestionnaire : <strong>{config.contact}</strong>.</>}
@@ -93,7 +109,21 @@ export function AbonnementBloque() {
             {config?.instructions && <p className="instructions">{config.instructions}</p>}
             {config?.contact && <p>Contact / numéro de paiement : <strong>{config.contact}</strong></p>}
 
-            {etat && msg !== 'active' && (
+            {declaration?.statut === 'paye' && msg !== 'active' && (
+              <form className="formulaire bloc-code" onSubmit={saisirCode}>
+                <div className="etat-declaration vert">
+                  <strong>Paiement confirmé</strong>
+                  <span>Voici votre code d'activation pour l'année {annee?.libelle}. Notez-le, puis saisissez-le ci-dessous : il ne peut servir qu'une seule fois.</span>
+                </div>
+                <div className="code-activation">{declaration.code_activation}</div>
+                <label><span>Saisir le code d'activation</span>
+                  <input className="champ-id" value={code} placeholder="IEPP-XXXX-XXXX" autoComplete="off" onChange={(e) => setCode(e.target.value)} />
+                </label>
+                {msg && msg !== 'active' && <p className="erreur">{msg}</p>}
+                <div className="actions"><button className="btn" disabled={envoi}>{envoi ? 'Vérification…' : 'Accéder au logiciel'}</button></div>
+              </form>
+            )}
+            {etat && declaration.statut !== 'paye' && msg !== 'active' && (
               <div className={`etat-declaration ${etat[1]}`}>
                 <strong>{declaration.statut === 'en_attente' ? 'ID en attente de confirmation' : etat[0]}</strong>
                 {declaration.statut === 'en_attente' && <span>L'ID {declaration.reference} a bien été reçu, mais le gestionnaire n'a pas encore confirmé ce paiement. Le logiciel s'activera automatiquement dès sa confirmation : cliquez alors sur « Actualiser ».</span>}
@@ -101,7 +131,7 @@ export function AbonnementBloque() {
               </div>
             )}
 
-            {declaration?.statut !== 'valide' && (
+            {!['valide', 'paye'].includes(declaration?.statut) && (
               <form className="formulaire" onSubmit={activer}>
                 <h3>Activer le logiciel avec l'ID de paiement</h3>
                 <p className="discret">Après le paiement, vous recevez un SMS contenant l'ID (référence) de la transaction. Saisissez-le ici : chaque ID ne peut servir qu'une seule fois.</p>
@@ -161,18 +191,18 @@ export default function Abonnements() {
   useEffect(() => { charger(); }, [charger]);
 
   const lignes = useMemo(() => iepps.map((i) => ({ iepp: i, abo: abos.find((a) => a.iepp_id === i.id) || null })), [iepps, abos]);
-  const compte = (f) => lignes.filter((l) => (f === 'non_paye' ? !l.abo : l.abo?.statut === f)).length;
-  const encaisse = abos.filter((a) => a.statut === 'valide').reduce((t, a) => t + Number(a.montant || 0), 0);
+  const compte = (f) => lignes.filter((l) => (f === 'non_paye' ? !l.abo : groupe(l.abo?.statut) === f)).length;
+  const encaisse = abos.filter((a) => groupe(a.statut) === 'valide').reduce((t, a) => t + Number(a.montant || 0), 0);
   const t = recherche.trim().toLowerCase();
   const affichees = lignes
-    .filter((l) => filtre === 'tous' || (filtre === 'non_paye' ? !l.abo : l.abo?.statut === filtre))
+    .filter((l) => filtre === 'tous' || (filtre === 'non_paye' ? !l.abo : groupe(l.abo?.statut) === filtre))
     .filter((l) => !t || `${l.iepp.nom} ${l.iepp.drena?.nom || ''}`.toLowerCase().includes(t));
 
   async function changerStatut(abo, statut, observations) {
     setMsg('');
     const { data: u } = await supabase.auth.getUser();
     const { error } = await supabase.from('abonnements').update({
-      statut, observations: observations ?? abo.observations, valide_par: statut === 'valide' ? u.user?.id : null, valide_le: statut === 'valide' ? new Date().toISOString() : null,
+      statut: statut === 'valide' ? 'paye' : statut, observations: observations ?? abo.observations, valide_par: statut === 'valide' ? u.user?.id : null, valide_le: statut === 'valide' ? new Date().toISOString() : null,
     }).eq('id', abo.id);
     if (error) setMsg(traduireErreur(error)); else charger();
   }
@@ -183,7 +213,7 @@ export default function Abonnements() {
     const ligne = {
       iepp_id: edition.iepp.id, annee_id: annee.id, montant: Number(edition.montant) || 0, mode: edition.mode,
       reference: edition.reference || null, telephone: edition.telephone || null, date_paiement: edition.date_paiement || null,
-      observations: edition.observations || null, statut: 'valide', valide_par: u.user?.id, valide_le: new Date().toISOString(),
+      observations: edition.observations || null, statut: edition.statut === 'valide' ? 'valide' : 'paye', valide_par: u.user?.id, valide_le: new Date().toISOString(),
     };
     const res = edition.id ? await supabase.from('abonnements').update(ligne).eq('id', edition.id) : await supabase.from('abonnements').insert(ligne);
     if (res.error) return setEdition({ ...edition, erreur: traduireErreur(res.error) });
@@ -224,7 +254,7 @@ export default function Abonnements() {
 
       <div className="barre-outils">
         <div className="bascule">
-          {[['en_attente', 'À valider'], ['valide', 'Payés'], ['non_paye', 'Non payés'], ['refuse', 'Refusés'], ['tous', 'Toutes']].map(([k, l]) => (
+          {[['en_attente', 'À valider'], ['valide', 'Payés / actifs'], ['non_paye', 'Non payés'], ['refuse', 'Refusés'], ['tous', 'Toutes']].map(([k, l]) => (
             <button key={k} className={filtre === k ? 'actif' : ''} onClick={() => setFiltre(k)}>{l}{k !== 'tous' ? ` (${compte(k)})` : ''}</button>
           ))}
         </div>
@@ -244,12 +274,12 @@ export default function Abonnements() {
                   <td><strong>{iepp.nom}</strong></td>
                   <td>{iepp.drena?.nom || '—'}</td>
                   <td><span className={`badge ${etat[1]}`}>{etat[0]}</span>{abo?.statut === 'refuse' && abo.observations && <div className="discret">{abo.observations}</div>}</td>
-                  <td>{abo ? <>{libelleMode(abo.mode)}{abo.reference && <div className="discret">Réf. {abo.reference}</div>}{abo.telephone && <div className="discret">Tél. {abo.telephone}</div>}{abo.date_paiement && <div className="discret">le {dateFr(abo.date_paiement)}</div>}</> : '—'}</td>
+                  <td>{abo ? <>{libelleMode(abo.mode)}{abo.reference && <div className="discret">Réf. {abo.reference}</div>}{abo.telephone && <div className="discret">Tél. {abo.telephone}</div>}{abo.date_paiement && <div className="discret">le {dateFr(abo.date_paiement)}</div>}{abo.code_activation && <div className="code-mini">Code : <strong className="champ-id">{abo.code_activation}</strong>{abo.code_utilise_le ? ` (utilisé le ${dateFr(abo.code_utilise_le.slice(0, 10))})` : ' (non utilisé)'}</div>}</> : '—'}</td>
                   <td className="nombre">{abo ? fcfa(abo.montant, config?.devise) : '—'}</td>
                   <td className="actions-ligne">
                     {abo?.statut === 'en_attente' && <button className="btn petit" onClick={() => changerStatut(abo, 'valide')}>Valider</button>}
                     {abo?.statut === 'en_attente' && <button className="lien" onClick={() => setEdition({ refus: true, abo, observations: '' })}>Refuser</button>}
-                    {abo?.statut === 'valide' && <button className="lien" onClick={() => changerStatut(abo, 'en_attente')}>Suspendre</button>}
+                    {['valide', 'paye'].includes(abo?.statut) && <button className="lien" onClick={() => changerStatut(abo, 'en_attente')}>Suspendre</button>}
                     {!abo && <button className="btn-contour petit" onClick={() => setEdition({ iepp, montant: config?.montant || 0, mode: 'especes', reference: '', telephone: '', date_paiement: new Date().toISOString().slice(0, 10), observations: '' })}>Enregistrer un paiement</button>}
                     {abo && abo.statut !== 'en_attente' && <button className="lien" onClick={() => setEdition({ iepp, ...abo })}>Modifier</button>}
                   </td>
@@ -288,7 +318,7 @@ export default function Abonnements() {
               <label><span>Date du paiement</span><input type="date" value={edition.date_paiement || ''} onChange={(e) => setEdition({ ...edition, date_paiement: e.target.value })} /></label>
               <label className="pleine"><span>Observations</span><textarea rows={2} value={edition.observations || ''} onChange={(e) => setEdition({ ...edition, observations: e.target.value })} /></label>
             </div>
-            <p className="discret">En enregistrant, l'abonnement {annee.libelle} de cette circonscription est validé et son accès est ouvert.</p>
+            <p className="discret">En enregistrant, le paiement est confirmé et un code d'activation est généré : il s'affiche à l'inspecteur, qui le saisit pour ouvrir l'accès.</p>
             {edition.erreur && <p className="erreur">{edition.erreur}</p>}
             <div className="actions"><button type="button" className="btn-contour" onClick={() => setEdition(null)}>Annuler</button><button className="btn">Valider l'abonnement</button></div>
           </form>

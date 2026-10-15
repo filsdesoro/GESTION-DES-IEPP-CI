@@ -352,3 +352,8 @@ input.note.abs { background: #fff4e0; color: #8a5a00; font-weight: 700; }
 input.champ-id { font-size: 17px; text-transform: uppercase; }
 .grille-champs.trois { grid-template-columns: repeat(3, 1fr); }
 @media (max-width: 900px) { .grille-champs.trois { grid-template-columns: 1fr; } }
+.code-activation { font-family: ui-monospace, Consolas, monospace; font-size: 30px; font-weight: 800; letter-spacing: .12em; text-align: center; padding: 16px; margin: 10px 0 14px; border: 2px dashed #0b7a52; border-radius: 12px; background: #f1faf6; color: #0b5d40; user-select: all; }
+.bloc-code label { display: flex; flex-direction: column; gap: 6px; font-weight: 700; }
+.code-mini { margin-top: 4px; font-size: 13px; }
+.badge.bleu { background: #e0ecff; color: #1f4f9a; }
+.etat-declaration.bleu { background: #e0ecff; color: #1f4f9a; }
