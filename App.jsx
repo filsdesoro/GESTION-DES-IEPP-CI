@@ -15,6 +15,7 @@ import Compositions from './Compositions.jsx';
 import SaisieNotes from './SaisieNotes.jsx';
 import BilanAnnuel from './BilanAnnuel.jsx';
 import Releves from './Releves.jsx';
+import Rendement from './Rendement.jsx';
 import Statistiques from './Statistiques.jsx';
 import SuiviSaisie from './SuiviSaisie.jsx';
 import CartesScolaires from './CartesScolaires.jsx';
@@ -37,6 +38,7 @@ export const MENU = [
   { chemin: '/eleves', titre: 'Élèves', roles: TOUS, el: <Eleves /> },
   { chemin: '/compositions', titre: 'Compositions', roles: TOUS, el: <Compositions /> },
   { chemin: '/bilan', titre: 'Bilan annuel', roles: TOUS, el: <BilanAnnuel /> },
+  { chemin: '/rendement', titre: 'Rendement des élèves', roles: TOUS, el: <Rendement /> },
   { chemin: '/releves', titre: 'Relevés de notes', roles: TOUS, el: <Releves /> },
   { chemin: '/statistiques', titre: 'Statistiques', roles: CIRC, el: <Statistiques /> },
   { chemin: '/suivi-saisie', titre: 'Suivi de la saisie', roles: CIRC, el: <SuiviSaisie /> },

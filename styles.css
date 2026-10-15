@@ -299,3 +299,33 @@ input.note.abs { background: #fff4e0; color: #8a5a00; font-weight: 700; }
   .entete .choix-drena { max-width: 220px; }
   .entete .choix-iepp { max-width: 260px; }
 }
+
+/* Rendement des élèves */
+.grille-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 16px; }
+.carte.stat { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 16px 20px; }
+.carte.stat span { color: var(--discret); font-size: 13px; font-weight: 700; }
+.carte.stat strong { font-size: 28px; color: var(--vert); }
+.carte.stat small { color: var(--discret); }
+.carte.stat.vert strong { color: #0b7a52; }
+.carte.stat.rouge strong { color: #b3261e; }
+.liste-deroulante { padding: 0; overflow: hidden; }
+.liste-deroulante summary { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 22px; cursor: pointer; font-weight: 800; font-size: 16px; list-style: none; }
+.liste-deroulante summary::-webkit-details-marker { display: none; }
+.liste-deroulante summary::before { content: '▸'; margin-right: 10px; transition: transform .15s; }
+.liste-deroulante[open] summary::before { transform: rotate(90deg); }
+.liste-deroulante summary > span:first-child { flex: 1; }
+.liste-deroulante.ok summary { border-left: 5px solid #0b7a52; }
+.liste-deroulante.ko summary { border-left: 5px solid #b3261e; }
+.liste-deroulante .compteur { background: var(--vert-clair, #e3f2ec); color: var(--vert); border-radius: 999px; padding: 3px 12px; font-size: 13px; }
+.liste-deroulante.ko .compteur { background: #fde2df; color: #a12d22; }
+.liste-deroulante .tableau-cadre { border: 0; border-top: 1px solid var(--bord); border-radius: 0; }
+.extremes h2 { margin: 0; }
+.extremes h3 { margin: 16px 0 6px; font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: var(--discret); }
+.extremes.meilleurs { border-top: 5px solid #0b7a52; }
+.extremes.faibles { border-top: 5px solid #b3261e; }
+@media (max-width: 900px) { .deux-colonnes { grid-template-columns: 1fr; } }
+@media print {
+  .liste-deroulante summary::before { content: ''; }
+  .grille-stats { grid-template-columns: repeat(4, 1fr); }
+  .extremes { break-inside: avoid; }
+}
