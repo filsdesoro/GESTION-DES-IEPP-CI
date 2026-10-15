@@ -358,3 +358,20 @@ input.champ-id { font-size: 17px; text-transform: uppercase; }
 .badge.bleu { background: #e0ecff; color: #1f4f9a; }
 .etat-declaration.bleu { background: #e0ecff; color: #1f4f9a; }
 .btn.danger { background: #b3261e; border-color: #b3261e; }
+
+/* Connexion / inscription */
+.connexion-droite { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 30px 0; }
+.connexion-droite .connexion-carte { align-self: auto; justify-self: auto; }
+.bascule-connexion { display: flex; background: var(--blanc); border: 1px solid var(--bord); border-radius: 999px; padding: 4px; width: min(420px, 90%); }
+.bascule-connexion button { flex: 1; border: 0; background: none; padding: 10px; border-radius: 999px; font: inherit; font-weight: 700; color: var(--discret); cursor: pointer; }
+.bascule-connexion button.actif { background: var(--vert); color: #fff; }
+.connexion-carte select { width: 100%; }
+.champ-mdp { position: relative; display: block; }
+.champ-mdp input { width: 100%; padding-right: 80px; }
+.champ-mdp .lien { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 13px; }
+.separateur { display: flex; align-items: center; gap: 10px; color: var(--discret); font-size: 13px; }
+.separateur::before, .separateur::after { content: ''; flex: 1; border-top: 1px solid var(--bord); }
+.btn-contour.large { width: 100%; padding: 12px; }
+.deux-champs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 520px) { .deux-champs { grid-template-columns: 1fr; } }
+.deux-champs label { min-width: 0; } .deux-champs input { width: 100%; box-sizing: border-box; }
