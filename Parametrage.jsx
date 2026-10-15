@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useApp } from './contexte.jsx';
-import { supabase, traduireErreur } from './supabase';
+import { supabase, traduireErreur, uid } from './supabase';
 import Champs from './Formulaire.jsx';
 import Crud from './Crud.jsx';
 import { useListe, dateFr } from './Choix.jsx';
@@ -117,8 +117,17 @@ function DrenaIepp() {
   );
 }
 
+function codeMatiere(nom) {
+  return nom.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 20)
+    + '_' + Math.random().toString(36).slice(2, 6).toUpperCase();
+}
+
 function Bareme() {
-  const matieres = useListe('matieres', { ordre: 'ordre' });
+  const catalogue = useListe('matieres', { ordre: 'ordre' });
+  const [ajoutees, setAjoutees] = useState([]);
+  const matieres = [...catalogue, ...ajoutees.filter((a) => !catalogue.some((m) => m.id === a.id))];
+  const [nouvelle, setNouvelle] = useState('');
+  const [erreur, setErreur] = useState('');
   const niveaux = useListe('niveaux', { ordre: 'ordre' }).filter((n) => n.cycle === 'primaire');
   const [bareme, setBareme] = useState({});
   const [niveau, setNiveau] = useState('CM2');
@@ -136,6 +145,28 @@ function Bareme() {
     const k = `${mid}|${niveau}`;
     setBareme((b) => ({ ...b, [k]: { ...(b[k] || { matiere_id: mid, niveau_code: niveau, note_sur: 10, coefficient: 1 }), [champ]: val } }));
   };
+
+  async function ajouterMatiere(e) {
+    e.preventDefault();
+    const nom = nouvelle.trim().replace(/\s+/g, ' ');
+    if (!nom) return;
+    setErreur(''); setMsg('');
+    const libelle = nom.charAt(0).toUpperCase() + nom.slice(1);
+    const existe = matieres.find((m) => m.libelle.toLowerCase() === libelle.toLowerCase());
+    if (existe) {
+      maj(existe.id, 'evaluee', true);
+      setNouvelle('');
+      return setMsg(`« ${existe.libelle} » existe déjà : elle est cochée pour ${niveau}.`);
+    }
+    const ordre = Math.max(10, ...matieres.map((m) => m.ordre || 0)) + 1;
+    const m = { id: uid(), code: codeMatiere(libelle), libelle, ordre };
+    const { error } = await supabase.from('matieres').insert(m);
+    if (error) return setErreur(traduireErreur(error));
+    setAjoutees((a) => [...a, m]);
+    maj(m.id, 'evaluee', true);
+    setNouvelle('');
+    setMsg(`Matière « ${libelle} » ajoutée et cochée pour ${niveau}. Pensez à cliquer sur « Enregistrer ${niveau} ».`);
+  }
 
   async function enregistrer() {
     setMsg('');
@@ -188,6 +219,13 @@ function Bareme() {
           })}
         </tbody>
       </table>
+      <form className="choix-ligne ajout-matiere" onSubmit={ajouterMatiere}>
+        <label>Matière absente de la liste ?
+          <input value={nouvelle} placeholder="ex. Lecture, Chant, Dessin, Récitation…" onChange={(e) => setNouvelle(e.target.value)} />
+        </label>
+        <button className="btn-contour" disabled={!nouvelle.trim()}>+ Ajouter la matière</button>
+      </form>
+      {erreur && <p className="erreur">{erreur}</p>}
       {msg && <p className="succes">{msg}</p>}
       <div className="actions">
         <button className="btn-contour" onClick={copierPartout}>Copier sur tous les niveaux</button>

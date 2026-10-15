@@ -260,3 +260,42 @@ input.note.abs { background: #fff4e0; color: #8a5a00; font-weight: 700; }
 .releve.apercu { position: relative; border-style: dashed; }
 .etiquette-partie { display: inline-block; margin: 14px 0 4px; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--orange-ivoire); background: #fff4e0; padding: 2px 8px; border-radius: 6px; }
 @media print { .non-imprime-sauf-apercu { display: none !important; } }
+
+/* En-tête sur une seule ligne (écrans larges) */
+@media (min-width: 901px) {
+  .entete { flex-wrap: nowrap; }
+  .entete .marque, .entete .utilisateur, .entete .btn-contour, .pastille-annee { flex-shrink: 0; white-space: nowrap; }
+  .entete .choix-iepp { min-width: 120px; flex: 0 1 auto; text-overflow: ellipsis; }
+}
+
+/* Saisie : colonnes calculées automatiquement */
+.tableau.saisie th.calcule { background: #fff4e0; color: #8a5a00; }
+.tableau.saisie td.calcule { background: #fffaf1; white-space: nowrap; }
+.bandeau-matieres { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; padding: 14px 18px; }
+.ajout-matiere { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--bord, #d6dbe3); }
+
+/* Annuaire des écoles */
+.rouge { color: #b3261e; }
+.annuaire-outils select { min-width: 220px; }
+.bascule { display: flex; gap: 6px; flex-wrap: wrap; }
+.bascule button { background: var(--blanc); border: 1px solid var(--bord); border-radius: 10px; padding: 10px 16px; font: inherit; font-weight: 700; color: var(--vert-fonce, #0b5d4b); cursor: pointer; }
+.bascule button.actif { background: var(--vert); border-color: var(--vert); color: #fff; }
+.bloc-annuaire h2 { margin: 0 0 10px; font-size: 19px; }
+.bloc-annuaire .discret { margin: -4px 0 10px; }
+.bloc-annuaire .badge { margin-left: 8px; font-size: 11px; padding: 1px 8px; }
+.tableau .nombre { text-align: right; font-variant-numeric: tabular-nums; }
+.tableau tr.ligne-total td { font-weight: 800; background: #f1f8f5; }
+.total-general { display: flex; gap: 22px; flex-wrap: wrap; align-items: center; }
+.titre-impression { font-weight: 800; font-size: 16px; margin: 0 0 8px; }
+@media print {
+  .bloc-annuaire { break-inside: avoid; margin-bottom: 14px; }
+  .bloc-annuaire h2 { font-size: 14px; }
+  .tableau tr.ligne-total td { background: #eee !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* En-tête : listes déroulantes compressibles pour tenir sur une ligne */
+@media (min-width: 901px) {
+  .entete select { min-width: 0; flex: 0 1 auto; text-overflow: ellipsis; }
+  .entete .choix-drena { max-width: 220px; }
+  .entete .choix-iepp { max-width: 260px; }
+}

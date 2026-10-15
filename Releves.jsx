@@ -4,7 +4,7 @@ import { supabase } from './supabase';
 import { ChoixEcoleClasse, dateFr, fmt, nomComplet, useEcoles } from './Choix.jsx';
 import { useInscrits } from './Eleves.jsx';
 import { ChoixComposition, libelleComposition, useCompositions } from './Compositions.jsx';
-import { useBareme } from './SaisieNotes.jsx';
+import { useBareme, useMatieresClasse } from './SaisieNotes.jsx';
 
 export function appreciation(m) {
   if (m === null || m === undefined) return '';
@@ -43,7 +43,7 @@ export default function Releves() {
   const [choix, setChoix] = useState({ ecoleId: null, classeId: null });
   const [classe, setClasse] = useState(null);
   const [inscrits] = useInscrits(choix.classeId);
-  const matieres = useBareme(classe?.niveau_code);
+  const [matieres] = useMatieresClasse(choix.classeId, classe?.niveau_code);
   const ecoles = useEcoles();
   const ecole = ecoles.find((e) => e.id === choix.ecoleId);
   const [notes, setNotes] = useState({});
@@ -74,7 +74,7 @@ export default function Releves() {
           <ChoixComposition compos={compos} valeur={compoId} changer={setCompoId} />
         </div>
         <ChoixEcoleClasse valeur={choix} changer={(v, c) => { setChoix(v); setClasse(c); }} niveaux={compo?.niveaux} />
-        {sansResultat && <p className="alerte">Les moyennes n'ont pas encore été calculées pour cette classe. Ouvrez la saisie des notes et cliquez sur « Enregistrer et calculer les moyennes ».</p>}
+        {sansResultat && <p className="alerte">Les moyennes n'ont pas encore été calculées pour cette classe. Ouvrez la saisie des notes de cette composition et cliquez sur « Enregistrer les notes ».</p>}
         {inscrits.length > 0 && <div className="barre-outils"><span className="discret">{inscrits.length} relevé(s)</span><div className="espace" /><button className="btn" onClick={() => window.print()}>Imprimer les relevés</button></div>}
       </div>
 
@@ -124,7 +124,7 @@ export default function Releves() {
             <div className="resultat-doc">
               <div>Moyenne : <b>{fmt(r?.moyenne)} / 10</b></div>
               <div>Rang : <b>{r?.rang ? `${r.rang}${r.rang === 1 ? 'er' : 'e'}` : '—'}</b> sur {inscrits.length}</div>
-              <div>Appréciation : <b>{appreciation(r?.moyenne)}</b></div>
+              <div>Appréciation : <b>{r?.appreciation || appreciation(r?.moyenne)}</b></div>
             </div>
             <div className="signatures">
               <div>Le maître</div>
@@ -152,11 +152,11 @@ function ApercuReleve({ iepp, annee, compo, ecole, classe, etat }) {
   ];
   const etapes = [
     [etat.ecoles > 0, 'Des écoles enregistrées dans la circonscription', 'Menu Écoles → + Ajouter'],
-    [bareme.length > 0, `Le barème des matières du niveau ${niveau}`, 'Paramétrage circonscription → Barème des matières (superviseur)'],
+    [bareme.length > 0 || etat.classeChoisie, 'Les matières de la classe', 'Choisies par l’enseignant dans Saisie des notes → « Choisir les matières » (ou barème général)'],
     [etat.compos > 0, 'Une composition programmée', 'Menu Compositions → Générer les compositions mensuelles'],
     [etat.classeChoisie, 'Une classe choisie ci-dessus', 'Les classes se créent dans Écoles → Ouvrir → + Ajouter'],
     [etat.eleves > 0, 'Des élèves inscrits dans la classe', 'Menu Élèves ou Importer'],
-    [false, 'Les notes saisies, moyennes calculées', 'Compositions → Saisir les notes → Enregistrer et calculer'],
+    [false, 'Les notes saisies', 'Compositions → Saisir les notes → Enregistrer (total, moyenne, rang et appréciation sont automatiques)'],
   ];
   return (
     <div className="non-imprime-sauf-apercu">

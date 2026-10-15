@@ -49,7 +49,7 @@ export function AppProvider({ children }) {
       return;
     }
     setProfil(p);
-    const { data: liste } = await supabase.from('iepp').select('id, nom, drena_id, localite, logo_url, telephone, email, boite_postale, drena(nom)').order('nom');
+    const { data: liste } = await supabase.from('iepp').select('*, drena(nom)').order('nom');
     setIepps(liste || []);
     let choisi = p.iepp_id;
     if (p.role === 'superviseur') {

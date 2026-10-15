@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useApp } from './contexte.jsx';
 import { supabase, traduireErreur } from './supabase';
-import { OPTIONS } from './Formulaire.jsx';
 import { ChoixEcoleClasse, fmt, nomComplet } from './Choix.jsx';
 import { useInscrits } from './Eleves.jsx';
 import { nomCourtComposition, useCompositions } from './Compositions.jsx';
@@ -22,56 +21,60 @@ export default function BilanAnnuel() {
 }
 
 function BilanClasse() {
-  const { role } = useApp();
+  const { role, iepp } = useApp();
   const [choix, setChoix] = useState({ ecoleId: null, classeId: null });
   const [inscrits, recharger] = useInscrits(choix.classeId);
-  const [toutes] = useCompositions();
-  // La moyenne annuelle se calcule sur les compositions mensuelles (pas les examens blancs)
-  const compos = toutes.filter((c) => c.type === 'mensuelle' || c.type === 'autre');
+  const [compos] = useCompositionsMensuelles();
   const [res, setRes] = useState({});
   const [seuil, setSeuil] = useState(5);
-  const [decisions, setDecisions] = useState({});
-  const [msg, setMsg] = useState('');
+  const [seuilEnregistre, setSeuilEnregistre] = useState(5);
+  const [msg, setMsg] = useState({ t: '', ok: true });
+  const [calcul, setCalcul] = useState(false);
   const modifiable = role !== 'conseiller';
+  const peutSeuil = role === 'superviseur' || role === 'iepp';
 
-  const charger = useCallback(async () => {
+  useEffect(() => { const s = Number(iepp?.seuil_passage ?? 5); setSeuil(s); setSeuilEnregistre(s); }, [iepp]);
+
+  const chargerRes = useCallback(async () => {
     if (!inscrits.length) { setRes({}); return; }
     const { data } = await supabase.from('resultats_composition').select('*').in('inscription_id', inscrits.map((i) => i.id));
     const r = {};
     (data || []).forEach((x) => { r[`${x.inscription_id}|${x.composition_id}`] = x; });
     setRes(r);
-    setDecisions(Object.fromEntries(inscrits.map((i) => [i.id, i.decision || ''])));
   }, [inscrits]);
-  useEffect(() => { charger(); }, [charger]);
+  useEffect(() => { chargerRes(); }, [chargerRes]);
 
-  // Moyenne annuelle = moyenne des compositions où l'élève a une moyenne
-  const lignes = inscrits.map((i) => {
-    const moys = compos.map((c) => res[`${i.id}|${c.id}`]?.moyenne).filter((m) => m !== null && m !== undefined).map(Number);
-    const ma = moys.length ? Math.round((moys.reduce((a, b) => a + b, 0) / moys.length) * 100) / 100 : null;
-    return { i, ma };
-  });
-  const tries = [...lignes].filter((l) => l.ma !== null).sort((a, b) => b.ma - a.ma);
-  const rangs = {};
-  tries.forEach((l, k) => { rangs[l.i.id] = k > 0 && tries[k - 1].ma === l.ma ? rangs[tries[k - 1].i.id] : k + 1; });
-
-  function proposer() {
-    setDecisions(Object.fromEntries(lignes.map((l) => [l.i.id, l.ma === null ? '' : l.ma >= seuil ? 'admis' : 'redouble'])));
-    setMsg('Décisions proposées selon le seuil — vérifiez puis enregistrez.');
-  }
-
-  async function enregistrer() {
-    setMsg('');
-    for (const l of lignes) {
-      const { error } = await supabase.from('inscriptions').update({
-        moyenne_annuelle: l.ma, rang_annuel: rangs[l.i.id] || null, decision: decisions[l.i.id] || null,
-      }).eq('id', l.i.id);
-      if (error) return setMsg(traduireErreur(error));
-    }
-    setMsg('Bilan de la classe enregistré.');
+  async function recalculer(silencieux = false) {
+    if (!choix.classeId) return;
+    setCalcul(true);
+    const { error } = await supabase.rpc('calculer_bilan_classe', { p_classe: choix.classeId });
+    setCalcul(false);
+    if (error) return setMsg({ t: traduireErreur(error), ok: false });
+    if (!silencieux) setMsg({ t: 'Bilan recalculé.', ok: true });
     recharger();
   }
 
-  const compte = (d) => Object.values(decisions).filter((x) => x === d).length;
+  // À l'ouverture d'une classe, le bilan est recalculé automatiquement
+  useEffect(() => { if (choix.classeId) recalculer(true); }, [choix.classeId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function enregistrerSeuil() {
+    const { error } = await supabase.from('iepp').update({ seuil_passage: seuil }).eq('id', iepp.id);
+    if (error) return setMsg({ t: traduireErreur(error), ok: false });
+    setSeuilEnregistre(Number(seuil));
+    await recalculer(true);
+    setMsg({ t: `Seuil de passage fixé à ${fmt(seuil, 2)}/10 pour la circonscription. Décisions recalculées.`, ok: true });
+  }
+
+  async function exception(i, valeur) {
+    // Abandon, exclusion, transfert : saisis à la main. Vide = décision automatique.
+    const { error } = await supabase.from('inscriptions').update({ decision: valeur || null }).eq('id', i.id);
+    if (error) return setMsg({ t: traduireErreur(error), ok: false });
+    await recalculer(true);
+  }
+
+  const lignes = [...inscrits].sort((a, b) => (a.rang_annuel ?? 9999) - (b.rang_annuel ?? 9999) || nomComplet(a.eleves).localeCompare(nomComplet(b.eleves)));
+  const compte = (d) => inscrits.filter((i) => i.decision === d).length;
+  const libDecision = { admis: 'Admis', redouble: 'Redouble', exclu: 'Exclu', abandon: 'Abandon', transfere: 'Transféré' };
 
   return (
     <>
@@ -79,34 +82,44 @@ function BilanClasse() {
       {choix.classeId && (
         <>
           <div className="barre-outils">
-            <label className="en-ligne">Seuil de passage <input className="petit" type="number" step="0.5" value={seuil} onChange={(e) => setSeuil(Number(e.target.value))} /> /10</label>
-            {modifiable && <button className="btn-contour" onClick={proposer}>Proposer les décisions</button>}
+            <label className="en-ligne">Seuil de passage
+              <input className="petit" type="number" step="0.25" min="0" max="10" value={seuil} disabled={!peutSeuil} onChange={(e) => setSeuil(Number(e.target.value))} /> /10
+            </label>
+            {peutSeuil && Number(seuil) !== Number(seuilEnregistre) && <button className="btn-contour" onClick={enregistrerSeuil}>Appliquer le seuil</button>}
             <div className="espace" />
             <span className="discret">Admis : {compte('admis')} · Redoublants : {compte('redouble')} · Abandons : {compte('abandon')}</span>
+            <button className="btn-contour" disabled={calcul} onClick={() => recalculer(false)}>{calcul ? 'Calcul…' : 'Recalculer'}</button>
             <button className="btn-contour" onClick={() => window.print()}>Imprimer</button>
-            {modifiable && <button className="btn" onClick={enregistrer}>Enregistrer le bilan</button>}
           </div>
-          {msg && <p className="succes">{msg}</p>}
+          <p className="discret non-imprime">La moyenne annuelle (moyenne des compositions mensuelles), le rang et la décision sont calculés automatiquement à chaque enregistrement de notes. Seuls les cas particuliers (abandon, exclusion, transfert) se saisissent à la main.</p>
+          {msg.t && <p className={msg.ok ? 'succes' : 'erreur'}>{msg.t}</p>}
           <div className="tableau-cadre">
             <table className="tableau">
-              <thead><tr><th>N°</th><th>Élève</th>{compos.map((c) => <th key={c.id}>{nomCourtComposition(c)}</th>)}<th>Moy. annuelle</th><th>Rang</th><th>Décision</th></tr></thead>
+              <thead><tr><th>Rang</th><th>Élève</th>{compos.map((c) => <th key={c.id}>{nomCourtComposition(c)}</th>)}<th>Moy. annuelle</th><th>Décision</th>{modifiable && <th className="non-imprime">Cas particulier</th>}</tr></thead>
               <tbody>
                 {lignes.length === 0 && <tr><td colSpan={compos.length + 5} className="vide">Aucun élève.</td></tr>}
-                {lignes.map(({ i, ma }, n) => (
-                  <tr key={i.id}>
-                    <td>{n + 1}</td>
-                    <td className="nom">{nomComplet(i.eleves)}</td>
-                    {compos.map((c) => <td key={c.id}>{fmt(res[`${i.id}|${c.id}`]?.moyenne)}</td>)}
-                    <td><b>{fmt(ma)}</b></td>
-                    <td>{rangs[i.id] || ''}</td>
-                    <td>
-                      <select disabled={!modifiable} value={decisions[i.id] || ''} onChange={(e) => setDecisions((d) => ({ ...d, [i.id]: e.target.value }))}>
-                        <option value="">—</option>
-                        {OPTIONS.decision.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                      </select>
-                    </td>
-                  </tr>
-                ))}
+                {lignes.map((i) => {
+                  const auto = ['admis', 'redouble'].includes(i.decision) || !i.decision;
+                  return (
+                    <tr key={i.id}>
+                      <td>{i.rang_annuel ? `${i.rang_annuel}${i.rang_annuel === 1 ? 'er' : 'e'}` : ''}</td>
+                      <td className="nom">{nomComplet(i.eleves)}</td>
+                      {compos.map((c) => <td key={c.id}>{fmt(res[`${i.id}|${c.id}`]?.moyenne)}</td>)}
+                      <td><b>{fmt(i.moyenne_annuelle)}</b></td>
+                      <td>{i.decision ? <span className={`badge ${i.decision === 'admis' ? 'vert' : i.decision === 'redouble' ? 'orange' : 'gris'}`}>{libDecision[i.decision]}</span> : <span className="discret">—</span>}</td>
+                      {modifiable && (
+                        <td className="non-imprime">
+                          <select value={auto ? '' : i.decision} onChange={(e) => exception(i, e.target.value)}>
+                            <option value="">Automatique</option>
+                            <option value="abandon">Abandon</option>
+                            <option value="exclu">Exclu</option>
+                            <option value="transfere">Transféré</option>
+                          </select>
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -114,6 +127,12 @@ function BilanClasse() {
       )}
     </>
   );
+}
+
+/** Compositions prises en compte dans la moyenne annuelle (mensuelles + autres). */
+function useCompositionsMensuelles() {
+  const [toutes, charger] = useCompositions();
+  return [toutes.filter((c) => c.type === 'mensuelle' || c.type === 'autre'), charger];
 }
 
 function SyntheseCirc({ ieppId, annee }) {

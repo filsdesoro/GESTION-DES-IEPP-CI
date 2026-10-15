@@ -1,4 +1,4 @@
-﻿import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from './contexte.jsx';
 import Crud from './Crud.jsx';
 import { OPTIONS, libelle } from './Formulaire.jsx';

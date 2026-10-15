@@ -8,6 +8,7 @@ import Parametrage from './Parametrage.jsx';
 import Secteurs from './Secteurs.jsx';
 import Ecoles from './Ecoles.jsx';
 import EcoleDetail from './EcoleDetail.jsx';
+import Annuaire from './Annuaire.jsx';
 import Personnel from './Personnel.jsx';
 import Eleves from './Eleves.jsx';
 import Compositions from './Compositions.jsx';
@@ -31,6 +32,7 @@ export const MENU = [
   { chemin: '/parametrage', titre: 'Paramétrage circonscription', roles: GESTION, el: <Parametrage /> },
   { chemin: '/secteurs', titre: 'Secteurs pédagogiques', roles: CIRC, el: <Secteurs /> },
   { chemin: '/ecoles', titre: 'Écoles', roles: TOUS, el: <Ecoles /> },
+  { chemin: '/annuaire', titre: 'Annuaire des écoles', roles: TOUS, el: <Annuaire /> },
   { chemin: '/personnel', titre: 'Personnel', roles: CIRC, el: <Personnel /> },
   { chemin: '/eleves', titre: 'Élèves', roles: TOUS, el: <Eleves /> },
   { chemin: '/compositions', titre: 'Compositions', roles: TOUS, el: <Compositions /> },
