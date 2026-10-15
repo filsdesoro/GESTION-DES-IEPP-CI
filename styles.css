@@ -348,3 +348,7 @@ input.note.abs { background: #fff4e0; color: #8a5a00; font-weight: 700; }
 .btn.petit, .btn-contour.petit { padding: 6px 12px; font-size: 13px; }
 .actions-ligne { white-space: nowrap; text-align: right; }
 .actions-ligne > * + * { margin-left: 8px; }
+.champ-id { font-family: ui-monospace, Consolas, monospace; letter-spacing: .04em; }
+input.champ-id { font-size: 17px; text-transform: uppercase; }
+.grille-champs.trois { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 900px) { .grille-champs.trois { grid-template-columns: 1fr; } }

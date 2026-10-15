@@ -33,7 +33,7 @@ export function AbonnementBloque() {
   const { profil, role, iepp, annee, deconnexion, recharger } = useApp();
   const [config] = useConfig();
   const [declaration, setDeclaration] = useState(undefined);
-  const [v, setV] = useState({ mode: 'orange_money', reference: '', telephone: '', date_paiement: new Date().toISOString().slice(0, 10) });
+  const [v, setV] = useState({ mode: 'moov_money', reference: '', telephone: '' });
   const [envoi, setEnvoi] = useState(false);
   const [msg, setMsg] = useState('');
 
@@ -41,25 +41,26 @@ export function AbonnementBloque() {
     if (!profil?.iepp_id || !annee) return;
     const { data } = await supabase.from('abonnements').select('*').eq('iepp_id', profil.iepp_id).eq('annee_id', annee.id).maybeSingle();
     setDeclaration(data || null);
-    if (data) setV({ mode: data.mode, reference: data.reference || '', telephone: data.telephone || '', date_paiement: data.date_paiement || '' });
+    if (data && data.statut !== 'valide') setV({ mode: data.mode, reference: data.reference || '', telephone: data.telephone || '' });
   }, [profil, annee]);
   useEffect(() => { charger(); }, [charger]);
 
-  async function declarer(e) {
+  async function activer(e) {
     e.preventDefault();
     setMsg('');
-    if (!v.reference.trim() && v.mode !== 'especes') return setMsg('Indiquez la référence (ID) de la transaction reçue par SMS.');
+    if (!v.reference.trim()) return setMsg("Saisissez l'ID de la transaction reçu par SMS après le paiement.");
     setEnvoi(true);
-    const ligne = {
-      iepp_id: profil.iepp_id, annee_id: annee.id, montant: config?.montant || 0, mode: v.mode,
-      reference: v.reference.trim() || null, telephone: v.telephone.trim() || null, date_paiement: v.date_paiement || null, statut: 'en_attente',
-    };
-    const res = declaration
-      ? await supabase.from('abonnements').update(ligne).eq('id', declaration.id)
-      : await supabase.from('abonnements').insert(ligne);
+    const { data, error } = await supabase.rpc('activer_abonnement', {
+      p_reference: v.reference.trim(), p_mode: v.mode, p_telephone: v.telephone.trim() || null,
+    });
     setEnvoi(false);
-    if (res.error) return setMsg(traduireErreur(res.error));
-    setMsg('ok');
+    if (error) return setMsg(traduireErreur(error));
+    if (data === 'active' || data === 'deja_actif') {
+      setMsg('active');
+      setTimeout(recharger, 1500);
+      return;
+    }
+    setMsg('attente');
     charger();
   }
 
@@ -92,45 +93,43 @@ export function AbonnementBloque() {
             {config?.instructions && <p className="instructions">{config.instructions}</p>}
             {config?.contact && <p>Contact / numéro de paiement : <strong>{config.contact}</strong></p>}
 
-            {etat && (
+            {etat && msg !== 'active' && (
               <div className={`etat-declaration ${etat[1]}`}>
-                <strong>{etat[0]}</strong>
-                {declaration.statut === 'en_attente' && <span>Votre paiement ({libelleMode(declaration.mode)}{declaration.reference ? `, réf. ${declaration.reference}` : ''}) a bien été déclaré. L'accès sera rétabli dès sa validation.</span>}
-                {declaration.statut === 'refuse' && <span>{declaration.observations || 'Le paiement n’a pas pu être vérifié.'} Corrigez la déclaration ci-dessous.</span>}
+                <strong>{declaration.statut === 'en_attente' ? 'ID en attente de confirmation' : etat[0]}</strong>
+                {declaration.statut === 'en_attente' && <span>L'ID {declaration.reference} a bien été reçu, mais le gestionnaire n'a pas encore confirmé ce paiement. Le logiciel s'activera automatiquement dès sa confirmation : cliquez alors sur « Actualiser ».</span>}
+                {declaration.statut === 'refuse' && <span>{declaration.observations || 'Le paiement n’a pas pu être vérifié.'} Vérifiez l'ID et réessayez.</span>}
               </div>
             )}
 
             {declaration?.statut !== 'valide' && (
-              <form className="formulaire" onSubmit={declarer}>
-                <h3>{declaration ? 'Modifier ma déclaration' : 'Déclarer mon paiement'}</h3>
+              <form className="formulaire" onSubmit={activer}>
+                <h3>Activer le logiciel avec l'ID de paiement</h3>
+                <p className="discret">Après le paiement, vous recevez un SMS contenant l'ID (référence) de la transaction. Saisissez-le ici : chaque ID ne peut servir qu'une seule fois.</p>
                 <div className="grille-champs">
+                  <label className="pleine"><span>ID de la transaction</span>
+                    <input className="champ-id" value={v.reference} placeholder="ex. CI261015.1234.A56789" autoComplete="off" onChange={(e) => setV({ ...v, reference: e.target.value })} />
+                  </label>
                   <label><span>Moyen de paiement</span>
                     <select value={v.mode} onChange={(e) => setV({ ...v, mode: e.target.value })}>
-                      {MODES.filter(([k]) => k !== 'gratuit').map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+                      {MODES.filter(([k]) => !['gratuit', 'especes'].includes(k)).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
                     </select>
                   </label>
-                  <label><span>Référence / ID de la transaction</span>
-                    <input value={v.reference} placeholder="ex. MP261015.1234.A56789" onChange={(e) => setV({ ...v, reference: e.target.value })} />
-                  </label>
                   <label><span>Numéro qui a payé</span>
-                    <input type="tel" value={v.telephone} placeholder="07 00 00 00 00" onChange={(e) => setV({ ...v, telephone: e.target.value })} />
-                  </label>
-                  <label><span>Date du paiement</span>
-                    <input type="date" value={v.date_paiement} onChange={(e) => setV({ ...v, date_paiement: e.target.value })} />
+                    <input type="tel" value={v.telephone} placeholder="01 00 00 00 00" onChange={(e) => setV({ ...v, telephone: e.target.value })} />
                   </label>
                 </div>
-                {msg && msg !== 'ok' && <p className="erreur">{msg}</p>}
-                {msg === 'ok' && <p className="succes">Déclaration envoyée. Le gestionnaire va vérifier votre paiement.</p>}
-                <div className="actions"><button className="btn" disabled={envoi}>{envoi ? 'Envoi…' : 'Envoyer la déclaration'}</button></div>
+                {msg && !['active', 'attente'].includes(msg) && <p className="erreur">{msg}</p>}
+                <div className="actions"><button className="btn" disabled={envoi}>{envoi ? 'Vérification…' : 'Activer le logiciel'}</button></div>
               </form>
             )}
+            {msg === 'active' && <div className="etat-declaration vert"><strong>Abonnement activé !</strong><span>Merci. Ouverture du logiciel…</span></div>}
           </>
         )}
 
         <div className="pied-abonnement">
           <span className="discret">{profil?.nom_complet} — {ROLES[role]}</span>
           <span>
-            <button className="btn-contour" onClick={recharger}>J'ai été validé : actualiser</button>{' '}
+            <button className="btn-contour" onClick={recharger}>Actualiser</button>{' '}
             <button className="btn-contour" onClick={deconnexion}>Déconnexion</button>
           </span>
         </div>
@@ -151,6 +150,7 @@ export default function Abonnements() {
   const [edition, setEdition] = useState(null);
   const [tarif, setTarif] = useState(null);
   const [msg, setMsg] = useState('');
+  const [vue, setVue] = useState('iepp');
 
   const charger = useCallback(async () => {
     if (!annee) return;
@@ -209,6 +209,12 @@ export default function Abonnements() {
       </div>
       {config && <p className="sous-titre">Tarif : <strong>{fcfa(config.montant, config.devise)}</strong> par circonscription et par année scolaire{config.contact ? ` — contact : ${config.contact}` : ''}.</p>}
 
+      <div className="onglets">
+        <button className={vue === 'iepp' ? 'actif' : ''} onClick={() => setVue('iepp')}>Circonscriptions</button>
+        <button className={vue === 'ids' ? 'actif' : ''} onClick={() => setVue('ids')}>ID de paiement reçus</button>
+      </div>
+      {vue === 'ids' && <IdsRecus config={config} iepps={iepps} apresAjout={charger} />}
+      {vue === 'iepp' && (<>
       <div className="grille-stats">
         <div className="carte stat orange"><span>À valider</span><strong>{compte('en_attente')}</strong></div>
         <div className="carte stat vert"><span>Payés</span><strong>{compte('valide')}</strong></div>
@@ -253,6 +259,7 @@ export default function Abonnements() {
           </tbody>
         </table>
       </div>
+      </>)}
 
       {edition?.refus && (
         <Modal titre="Refuser le paiement" fermer={() => setEdition(null)}>
@@ -307,5 +314,101 @@ export default function Abonnements() {
         </Modal>
       )}
     </div>
+  );
+}
+
+// =====================================================================
+//  ID de paiement reçus (SMS) : chaque ID active UNE SEULE circonscription
+// =====================================================================
+function IdsRecus({ config, iepps, apresAjout }) {
+  const vide = () => ({ reference: '', montant: config?.montant ?? '', mode: 'moov_money', telephone: '', date_reception: new Date().toISOString().slice(0, 10), observations: '' });
+  const [liste, setListe] = useState([]);
+  const [v, setV] = useState(vide);
+  const [msg, setMsg] = useState('');
+  const [filtre, setFiltre] = useState('tous');
+
+  const charger = useCallback(async () => {
+    const { data, error } = await supabase.from('paiements_recus').select('*').order('created_at', { ascending: false });
+    if (error) setMsg(traduireErreur(error));
+    setListe(data || []);
+  }, []);
+  useEffect(() => { charger(); }, [charger]);
+  useEffect(() => { if (config && v.montant === '') setV((x) => ({ ...x, montant: config.montant })); }, [config]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function ajouter(e) {
+    e.preventDefault();
+    setMsg('');
+    if (!v.reference.trim()) return setMsg("Saisissez l'ID reçu par SMS.");
+    const { error } = await supabase.from('paiements_recus').insert({
+      reference: v.reference.trim(), montant: v.montant === '' ? null : Number(v.montant), mode: v.mode,
+      telephone: v.telephone.trim() || null, date_reception: v.date_reception || null, observations: v.observations || null,
+    });
+    if (error) return setMsg(/doublon|duplicate/i.test(error.message) ? 'Cet ID est déjà enregistré.' : traduireErreur(error));
+    setV(vide());
+    setMsg('ok');
+    await charger();
+    apresAjout();
+  }
+
+  async function supprimer(p) {
+    if (!confirm(`Supprimer l'ID ${p.reference} ?`)) return;
+    const { error } = await supabase.from('paiements_recus').delete().eq('id', p.id);
+    if (error) setMsg(traduireErreur(error)); else charger();
+  }
+
+  const nomIepp = (id) => iepps.find((i) => i.id === id)?.nom || '—';
+  const dispo = liste.filter((p) => !p.utilise_le).length;
+  const affiches = liste.filter((p) => filtre === 'tous' || (filtre === 'dispo' ? !p.utilise_le : !!p.utilise_le));
+
+  return (
+    <>
+      <form className="carte formulaire" onSubmit={ajouter}>
+        <h3 style={{ marginTop: 0 }}>Enregistrer un ID reçu</h3>
+        <p className="discret">Recopiez l'ID figurant sur le SMS de réception du paiement. Si une IEPP a déjà saisi cet ID, son abonnement s'active immédiatement ; sinon l'ID attend qu'une IEPP l'utilise. Chaque ID ne sert qu'une seule fois.</p>
+        <div className="grille-champs trois">
+          <label><span>ID de la transaction</span><input className="champ-id" value={v.reference} autoComplete="off" onChange={(e) => setV({ ...v, reference: e.target.value })} /></label>
+          <label><span>Montant reçu ({config?.devise || 'FCFA'})</span><input type="number" min="0" value={v.montant} onChange={(e) => setV({ ...v, montant: e.target.value })} /></label>
+          <label><span>Moyen</span>
+            <select value={v.mode} onChange={(e) => setV({ ...v, mode: e.target.value })}>
+              {MODES.filter(([k]) => k !== 'gratuit').map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+            </select>
+          </label>
+          <label><span>Numéro de l'expéditeur</span><input type="tel" value={v.telephone} onChange={(e) => setV({ ...v, telephone: e.target.value })} /></label>
+          <label><span>Date de réception</span><input type="date" value={v.date_reception} onChange={(e) => setV({ ...v, date_reception: e.target.value })} /></label>
+          <label><span>Observation</span><input value={v.observations} placeholder="ex. IEPP de …" onChange={(e) => setV({ ...v, observations: e.target.value })} /></label>
+        </div>
+        {msg && msg !== 'ok' && <p className="erreur">{msg}</p>}
+        {msg === 'ok' && <p className="succes">ID enregistré.</p>}
+        <div className="actions"><button className="btn">+ Ajouter l'ID</button></div>
+      </form>
+
+      <div className="barre-outils">
+        <div className="bascule">
+          {[['tous', `Tous (${liste.length})`], ['dispo', `Disponibles (${dispo})`], ['utilise', `Utilisés (${liste.length - dispo})`]].map(([k, l]) => (
+            <button key={k} className={filtre === k ? 'actif' : ''} onClick={() => setFiltre(k)}>{l}</button>
+          ))}
+        </div>
+      </div>
+      <div className="tableau-cadre">
+        <table className="tableau">
+          <thead><tr><th>ID</th><th>Moyen</th><th className="nombre">Montant</th><th>Reçu le</th><th>État</th><th /></tr></thead>
+          <tbody>
+            {affiches.length === 0 && <tr><td colSpan={6} className="vide">Aucun ID.</td></tr>}
+            {affiches.map((p) => (
+              <tr key={p.id}>
+                <td><strong className="champ-id">{p.reference}</strong>{p.telephone && <div className="discret">de {p.telephone}</div>}{p.observations && <div className="discret">{p.observations}</div>}</td>
+                <td>{libelleMode(p.mode)}</td>
+                <td className="nombre">{p.montant == null ? '—' : fcfa(p.montant, config?.devise)}</td>
+                <td>{dateFr(p.date_reception)}</td>
+                <td>{p.utilise_le
+                  ? <><span className="badge gris">Utilisé</span><div className="discret">{nomIepp(p.utilise_iepp)} — {dateFr(p.utilise_le.slice(0, 10))}</div></>
+                  : <span className="badge vert">Disponible</span>}</td>
+                <td className="actions-ligne">{!p.utilise_le && <button className="lien" onClick={() => supprimer(p)}>Supprimer</button>}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
