@@ -48,8 +48,6 @@ export default function TableauBord() {
     ['Écoles', stats.nb_ecoles],
     ['Secteurs', stats.nb_secteurs],
     ['Classes', stats.nb_classes],
-    ['Élèves', stats.nb_eleves],
-    ['dont filles', stats.nb_filles],
     ['Personnel', stats.nb_personnel],
   ] : null;
 
@@ -59,6 +57,7 @@ export default function TableauBord() {
       {iepp && <p className="sous-titre">{iepp.nom}{annee ? ` — année scolaire ${annee.libelle}` : ''}</p>}
       {chiffres && (
         <div className="chiffres">
+          <Effectif total={Number(stats.nb_eleves || 0)} filles={Number(stats.nb_filles || 0)} />
           {chiffres.map(([l, v]) => (
             <div key={l} className="chiffre"><b>{Number(v || 0).toLocaleString('fr-FR')}</b><span>{l}</span></div>
           ))}
@@ -70,6 +69,25 @@ export default function TableauBord() {
         <Etat titre="Base de données" sous="Hébergée sur Supabase" etat={base} texteOk="Connectée" texteKo="Injoignable" />
       </div>
       <button className="btn" onClick={verifier}>Vérifier à nouveau</button>
+    </div>
+  );
+}
+
+function Effectif({ total, filles }) {
+  const garcons = Math.max(total - filles, 0);
+  const pc = (n) => (total ? `${Math.round((1000 * n) / total) / 10}`.replace('.', ',') + ' %' : '—');
+  const nb = (n) => n.toLocaleString('fr-FR');
+  return (
+    <div className="chiffre effectif">
+      <div className="effectif-tete"><b>{nb(total)}</b><span>Élèves (total)</span></div>
+      <div className="effectif-barre" aria-hidden="true">
+        <i className="g" style={{ width: total ? `${(100 * garcons) / total}%` : '50%' }} />
+        <i className="f" style={{ width: total ? `${(100 * filles) / total}%` : '50%' }} />
+      </div>
+      <div className="effectif-detail">
+        <span><i className="pastille g" /> Garçons <b>{nb(garcons)}</b> <small>{pc(garcons)}</small></span>
+        <span><i className="pastille f" /> Filles <b>{nb(filles)}</b> <small>{pc(filles)}</small></span>
+      </div>
     </div>
   );
 }

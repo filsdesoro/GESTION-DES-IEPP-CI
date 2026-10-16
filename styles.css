@@ -375,3 +375,16 @@ input.champ-id { font-size: 17px; text-transform: uppercase; }
 .deux-champs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 @media (max-width: 520px) { .deux-champs { grid-template-columns: 1fr; } }
 .deux-champs label { min-width: 0; } .deux-champs input { width: 100%; box-sizing: border-box; }
+
+/* Tableau de bord : effectif garçons / filles */
+.chiffre.effectif { grid-column: span 2; gap: 10px; }
+.effectif-tete { display: flex; align-items: baseline; gap: 10px; }
+.effectif-barre { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: #eef2f1; }
+.effectif-barre i { display: block; height: 100%; }
+.effectif-barre .g, .pastille.g { background: #2f6fb3; }
+.effectif-barre .f, .pastille.f { background: #d0557a; }
+.effectif-detail { display: flex; flex-wrap: wrap; gap: 6px 18px; color: var(--discret); font-size: 14px; }
+.effectif-detail b { color: var(--texte); font-size: 16px; margin-left: 4px; }
+.effectif-detail small { margin-left: 4px; }
+.pastille { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+@media (max-width: 520px) { .chiffre.effectif { grid-column: 1 / -1; } }
