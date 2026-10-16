@@ -22,6 +22,7 @@ export default function TableauBord() {
   const [stats, setStats] = useState(null);
   const [statuts, setStatuts] = useState(null);
   const [cycles, setCycles] = useState(null);
+  const [perso, setPerso] = useState(null);
 
   const verifier = useCallback(async () => {
     setServeur(null);
@@ -50,6 +51,12 @@ export default function TableauBord() {
       setStatuts(c);
     });
     if (annee) {
+      supabase.from('affectations').select('personnel(sexe)').eq('iepp_id', ieppId).eq('annee_id', annee.id).then(({ data, error }) => {
+        if (error) return setPerso(null);
+        const t = { M: 0, F: 0, nr: 0 };
+        (data || []).forEach((a) => { const x = a.personnel?.sexe; t[x === 'M' || x === 'F' ? x : 'nr'] += 1; });
+        setPerso(t);
+      });
       Promise.all([
         supabase.from('niveaux').select('code, cycle'),
         supabase.from('classes').select('niveau_code, ecoles!inner(iepp_id)').eq('annee_id', annee.id).eq('ecoles.iepp_id', ieppId),
@@ -66,7 +73,7 @@ export default function TableauBord() {
   const chiffres = stats && (role === 'superviseur' || role === 'iepp' || role === 'conseiller') ? [
     ['Secteurs', stats.nb_secteurs],
     ...(cycles ? [['Classes primaires', cycles.primaire], ['Classes maternelles', cycles.prescolaire]] : [['Classes', stats.nb_classes]]),
-    ['Personnel', stats.nb_personnel],
+    ...(perso ? [] : [['Personnel', stats.nb_personnel]]),
   ] : null;
 
   return (
@@ -77,6 +84,7 @@ export default function TableauBord() {
         <div className="chiffres">
           <Effectif total={Number(stats.nb_eleves || 0)} filles={Number(stats.nb_filles || 0)} />
           {statuts && <Ecoles c={statuts} />}
+          {perso && <Personnel t={perso} />}
           {chiffres.map(([l, v]) => (
             <div key={l} className="chiffre"><b>{Number(v || 0).toLocaleString('fr-FR')}</b><span>{l}</span></div>
           ))}
@@ -128,6 +136,27 @@ function Ecoles({ c }) {
         <span><i className="pastille pub" /> Publiques <b>{c.public}</b> <small>{pc(c.public)}</small></span>
         <span><i className="pastille priv" /> Privées <b>{privees}</b> <small>{pc(privees)}{privees ? ` — ${c.prive_laic} laïque(s), ${c.prive_confessionnel} confessionnelle(s)` : ''}</small></span>
         {c.communautaire > 0 && <span><i className="pastille com" /> Communautaires <b>{c.communautaire}</b> <small>{pc(c.communautaire)}</small></span>}
+      </div>
+    </div>
+  );
+}
+
+function Personnel({ t }) {
+  const total = t.M + t.F + t.nr;
+  const pc = (n) => (total ? `${Math.round((1000 * n) / total) / 10}`.replace('.', ',') + ' %' : '—');
+  const largeur = (n) => (total ? `${(100 * n) / total}%` : '0%');
+  return (
+    <div className="chiffre effectif">
+      <div className="effectif-tete"><b>{total.toLocaleString('fr-FR')}</b><span>Personnel (total)</span></div>
+      <div className="effectif-barre" aria-hidden="true">
+        <i className="g" style={{ width: largeur(t.M) }} />
+        <i className="f" style={{ width: largeur(t.F) }} />
+        <i className="nr" style={{ width: largeur(t.nr) }} />
+      </div>
+      <div className="effectif-detail">
+        <span><i className="pastille g" /> Hommes <b>{t.M}</b> <small>{pc(t.M)}</small></span>
+        <span><i className="pastille f" /> Femmes <b>{t.F}</b> <small>{pc(t.F)}</small></span>
+        {t.nr > 0 && <span><i className="pastille nr" /> Sexe non renseigné <b>{t.nr}</b></span>}
       </div>
     </div>
   );
