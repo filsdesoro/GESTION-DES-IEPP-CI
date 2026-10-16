@@ -388,3 +388,6 @@ input.champ-id { font-size: 17px; text-transform: uppercase; }
 .effectif-detail small { margin-left: 4px; }
 .pastille { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
 @media (max-width: 520px) { .chiffre.effectif { grid-column: 1 / -1; } }
+.effectif-barre .pub, .pastille.pub { background: #0b7a52; }
+.effectif-barre .priv, .pastille.priv { background: #e08a00; }
+.effectif-barre .com, .pastille.com { background: #7a5bb5; }
