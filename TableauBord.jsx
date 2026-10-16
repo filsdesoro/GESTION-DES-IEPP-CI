@@ -59,12 +59,17 @@ export default function TableauBord() {
       });
       Promise.all([
         supabase.from('niveaux').select('code, cycle'),
-        supabase.from('classes').select('niveau_code, ecoles!inner(iepp_id)').eq('annee_id', annee.id).eq('ecoles.iepp_id', ieppId),
+        supabase.from('classes').select('niveau_code, ecoles!inner(iepp_id, statut)').eq('annee_id', annee.id).eq('ecoles.iepp_id', ieppId),
       ]).then(([n, c]) => {
         if (n.error || c.error) return setCycles(null);
         const cycle = Object.fromEntries((n.data || []).map((x) => [x.code, x.cycle]));
-        const t = { primaire: 0, prescolaire: 0 };
-        (c.data || []).forEach((x) => { t[cycle[x.niveau_code] === 'prescolaire' ? 'prescolaire' : 'primaire'] += 1; });
+        const ligne = () => ({ public: 0, prive: 0, communautaire: 0 });
+        const t = { primaire: ligne(), prescolaire: ligne() };
+        (c.data || []).forEach((x) => {
+          const cy = cycle[x.niveau_code] === 'prescolaire' ? 'prescolaire' : 'primaire';
+          const st = x.ecoles?.statut === 'public' ? 'public' : x.ecoles?.statut === 'communautaire' ? 'communautaire' : 'prive';
+          t[cy][st] += 1;
+        });
         setCycles(t);
       });
     }
@@ -72,7 +77,7 @@ export default function TableauBord() {
 
   const chiffres = stats && (role === 'superviseur' || role === 'iepp' || role === 'conseiller') ? [
     ['Secteurs', stats.nb_secteurs],
-    ...(cycles ? [['Classes primaires', cycles.primaire], ['Classes maternelles', cycles.prescolaire]] : [['Classes', stats.nb_classes]]),
+    ...(cycles ? [] : [['Classes', stats.nb_classes]]),
     ...(perso ? [] : [['Personnel', stats.nb_personnel]]),
   ] : null;
 
@@ -85,6 +90,7 @@ export default function TableauBord() {
           <Effectif total={Number(stats.nb_eleves || 0)} filles={Number(stats.nb_filles || 0)} />
           {statuts && <Ecoles c={statuts} />}
           {perso && <Personnel t={perso} />}
+          {cycles && <Classes t={cycles} />}
           {chiffres.map(([l, v]) => (
             <div key={l} className="chiffre"><b>{Number(v || 0).toLocaleString('fr-FR')}</b><span>{l}</span></div>
           ))}
@@ -158,6 +164,31 @@ function Personnel({ t }) {
         <span><i className="pastille f" /> Femmes <b>{t.F}</b> <small>{pc(t.F)}</small></span>
         {t.nr > 0 && <span><i className="pastille nr" /> Sexe non renseigné <b>{t.nr}</b></span>}
       </div>
+    </div>
+  );
+}
+
+function Classes({ t }) {
+  const tot = (l) => l.public + l.prive + l.communautaire;
+  const avecCom = t.primaire.communautaire + t.prescolaire.communautaire > 0;
+  const col = (k) => t.primaire[k] + t.prescolaire[k];
+  const total = tot(t.primaire) + tot(t.prescolaire);
+  const ligne = (titre, l) => (
+    <tr>
+      <th>{titre}</th><td>{l.public}</td><td>{l.prive}</td>{avecCom && <td>{l.communautaire}</td>}<td><b>{tot(l)}</b></td>
+    </tr>
+  );
+  return (
+    <div className="chiffre effectif classes-tableau">
+      <div className="effectif-tete"><b>{total.toLocaleString('fr-FR')}</b><span>Classes (total)</span></div>
+      <table>
+        <thead><tr><th /><th>Public</th><th>Privé</th>{avecCom && <th>Comm.</th>}<th>Total</th></tr></thead>
+        <tbody>
+          {ligne('Primaire', t.primaire)}
+          {ligne('Maternelle', t.prescolaire)}
+          <tr className="total"><th>Total</th><td>{col('public')}</td><td>{col('prive')}</td>{avecCom && <td>{col('communautaire')}</td>}<td><b>{total}</b></td></tr>
+        </tbody>
+      </table>
     </div>
   );
 }

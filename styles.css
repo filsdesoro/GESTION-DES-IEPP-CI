@@ -397,3 +397,9 @@ input.champ-id { font-size: 17px; text-transform: uppercase; }
 .actualiser.tourne .icone-actu { animation: tourne 0.8s linear infinite; }
 @media (max-width: 1500px) { .btn-contour.actualiser { font-size: 0; gap: 0; } .btn-contour.actualiser .icone-actu { font-size: 18px; } }
 @media print { .btn-contour.actualiser { display: none !important; } }
+.classes-tableau table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.classes-tableau th, .classes-tableau td { padding: 4px 6px; text-align: right; border-bottom: 1px solid var(--bord); }
+.classes-tableau thead th { color: var(--discret); font-weight: 600; font-size: 12px; }
+.classes-tableau tbody th { text-align: left; color: var(--discret); font-weight: 600; }
+.classes-tableau tr.total td, .classes-tableau tr.total th { border-bottom: 0; color: var(--texte); font-weight: 700; }
+.classes-tableau td b { font-family: inherit; font-size: 15px; color: var(--vert); }
