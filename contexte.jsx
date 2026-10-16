@@ -21,6 +21,7 @@ export function AppProvider({ children }) {
   const [chargement, setChargement] = useState(true);
   const [erreurProfil, setErreurProfil] = useState('');
   const [abonnementActif, setAbonnementActif] = useState(true);
+  const [version, setVersion] = useState(0);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
@@ -75,6 +76,15 @@ export function AppProvider({ children }) {
 
   useEffect(() => { recharger(); }, [recharger]);
 
+  /** Actualise toutes les données affichées, sans recharger la page. */
+  const actualiser = useCallback(async () => {
+    const { data: liste } = await supabase.from('iepp').select('*, drena(nom)').order('nom');
+    if (liste) setIepps(liste);
+    const { data: a } = await supabase.from('annees_scolaires').select('*').eq('active', true).maybeSingle();
+    setAnnee(a || null);
+    setVersion((v) => v + 1);
+  }, []);
+
   const setIeppId = (id) => {
     setIeppIdState(id);
     try { localStorage.setItem('iepp_courant', id); } catch { /* ignore */ }
@@ -86,7 +96,7 @@ export function AppProvider({ children }) {
 
   const valeur = {
     session, profil, role, iepps, iepp, ieppId, setIeppId, annee, chargement, erreurProfil,
-    peutGerer, recharger, abonnementActif,
+    peutGerer, recharger, abonnementActif, actualiser, version,
     deconnexion: () => supabase.auth.signOut(),
   };
   return <Ctx.Provider value={valeur}>{children}</Ctx.Provider>;

@@ -392,3 +392,8 @@ input.champ-id { font-size: 17px; text-transform: uppercase; }
 .effectif-barre .priv, .pastille.priv { background: #e08a00; }
 .effectif-barre .com, .pastille.com { background: #7a5bb5; }
 .effectif-barre .nr, .pastille.nr { background: #b9c2c0; }
+.btn-contour.actualiser { display: inline-flex; align-items: center; gap: 6px; }
+.icone-actu { display: inline-block; font-size: 17px; line-height: 1; }
+.actualiser.tourne .icone-actu { animation: tourne 0.8s linear infinite; }
+@media (max-width: 1500px) { .btn-contour.actualiser { font-size: 0; gap: 0; } .btn-contour.actualiser .icone-actu { font-size: 18px; } }
+@media print { .btn-contour.actualiser { display: none !important; } }

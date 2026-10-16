@@ -5,7 +5,12 @@ import { supabase, traduireErreur } from './supabase';
 import Modal from './Modal.jsx';
 
 export default function Layout({ menu, children }) {
-  const { profil, role, iepps, iepp, ieppId, setIeppId, annee, deconnexion } = useApp();
+  const { profil, role, iepps, iepp, ieppId, setIeppId, annee, deconnexion, actualiser, version } = useApp();
+  const [tourne, setTourne] = useState(false);
+  async function toutActualiser() {
+    setTourne(true);
+    try { await actualiser(); } finally { setTimeout(() => setTourne(false), 600); }
+  }
   const [ouvert, setOuvert] = useState(false);
   const [mdp, setMdp] = useState(false);
   const loc = useLocation();
@@ -34,6 +39,9 @@ export default function Layout({ menu, children }) {
             <span>{ROLES[role]}</span>
           </div>
         </div>
+        <button className={`btn-contour actualiser ${tourne ? 'tourne' : ''}`} onClick={toutActualiser} title="Recharger toutes les données affichées" disabled={tourne}>
+          <span className="icone-actu" aria-hidden="true">⟳</span> Actualiser
+        </button>
         <button className="btn-contour" onClick={() => setMdp(true)}>Mot de passe</button>
         <button className="btn-contour" onClick={deconnexion}>Déconnexion</button>
       </header>
@@ -50,7 +58,7 @@ export default function Layout({ menu, children }) {
           {!annee && (
             <div className="alerte">Aucune année scolaire active. {role === 'superviseur' ? 'Créez-la dans Paramétrage circonscription.' : 'Le superviseur doit en activer une.'}</div>
           )}
-          {children}
+          <div key={version}>{children}</div>
         </main>
       </div>
       {mdp && <ChangerMotDePasse fermer={() => setMdp(false)} />}
