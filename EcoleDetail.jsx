@@ -30,6 +30,7 @@ export default function EcoleDetail() {
 
   if (!ecole) return <p className="discret">Chargement…</p>;
   const equipe = personnel.filter((p) => p.ecole_id === id);
+  const directeur = equipe.find((p) => ['DIR_DECH', 'DIR_CLASSE'].includes(p.fonction_code));
   const total = effectifs.reduce((s, e) => ({ g: s.g + e.garcons, f: s.f + e.filles, t: s.t + e.total }), { g: 0, f: 0, t: 0 });
   const equip = [['a_cantine', 'Cantine'], ['a_latrines', 'Latrines'], ['a_point_eau', "Point d'eau"], ['a_electricite', 'Électricité'], ['a_cloture', 'Clôture']];
 
@@ -52,6 +53,7 @@ export default function EcoleDetail() {
       <p className="sous-titre">
         {[ecole.code_ecole && `Code ${ecole.code_ecole}`, libelle('statut_ecole', ecole.statut), libelle('cycle_ecole', ecole.cycle), ecole.secteurs?.nom && `Secteur ${ecole.secteurs.nom}`, ecole.localite].filter(Boolean).join(' · ')}
       </p>
+      <p className="ligne-directeur">Directeur : <b>{nomComplet(directeur) || 'non renseigné'}</b>{directeur?.telephone ? ` — ${directeur.telephone}` : ''}</p>
 
       <div className="chiffres">
         <div className="chiffre"><b>{total.t}</b><span>Élèves</span></div>

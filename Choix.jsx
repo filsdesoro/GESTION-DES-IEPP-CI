@@ -70,3 +70,25 @@ export function ChoixEcoleClasse({ valeur, changer, niveaux, sansClasse }) {
 export const nomComplet = (p) => (p ? `${p.nom || ''} ${p.prenoms || ''}`.trim() : '');
 export const dateFr = (d) => (d ? new Date(d + (d.length === 10 ? 'T00:00:00' : '')).toLocaleDateString('fr-FR') : '');
 export const fmt = (n, d = 2) => (n === null || n === undefined || n === '' ? '' : Number(n).toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d }));
+
+/** Personnel de la circonscription pour l'année active : fiches par id et directeur de chaque école. */
+export function useEquipes() {
+  const { ieppId, annee } = useApp();
+  const [eq, setEq] = useState({ parId: {}, directeurs: {} });
+  useEffect(() => {
+    if (!ieppId || !annee) return;
+    supabase.from('affectations').select('ecole_id, fonction_code, personnel(id, nom, prenoms, telephone)')
+      .eq('iepp_id', ieppId).eq('annee_id', annee.id)
+      .then(({ data }) => {
+        const parId = {};
+        const directeurs = {};
+        (data || []).forEach((a) => {
+          if (!a.personnel) return;
+          parId[a.personnel.id] = a.personnel;
+          if (a.ecole_id && ['DIR_DECH', 'DIR_CLASSE'].includes(a.fonction_code) && !directeurs[a.ecole_id]) directeurs[a.ecole_id] = a.personnel;
+        });
+        setEq({ parId, directeurs });
+      });
+  }, [ieppId, annee]);
+  return eq;
+}

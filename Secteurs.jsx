@@ -11,7 +11,7 @@ export function usePersonnelIepp() {
   useEffect(() => {
     if (!ieppId || !annee) return;
     supabase.from('affectations')
-      .select('ecole_id, fonction_code, personnel(id, nom, prenoms, emploi_code, matricule)')
+      .select('ecole_id, fonction_code, personnel(id, nom, prenoms, emploi_code, matricule, telephone)')
       .eq('iepp_id', ieppId).eq('annee_id', annee.id)
       .then(({ data }) => setListe((data || []).filter((a) => a.personnel).map((a) => ({ ...a.personnel, ecole_id: a.ecole_id, fonction_code: a.fonction_code }))
         .sort((a, b) => nomComplet(a).localeCompare(nomComplet(b)))));

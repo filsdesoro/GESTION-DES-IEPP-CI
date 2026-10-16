@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useApp } from './contexte.jsx';
 import { supabase } from './supabase';
-import { ChoixEcoleClasse, dateFr, fmt, nomComplet, useEcoles } from './Choix.jsx';
+import { ChoixEcoleClasse, dateFr, fmt, nomComplet, useEcoles, useEquipes } from './Choix.jsx';
 import { useInscrits } from './Eleves.jsx';
 import { ChoixComposition, libelleComposition, useCompositions } from './Compositions.jsx';
 import { useBareme, useMatieresClasse } from './SaisieNotes.jsx';
@@ -46,6 +46,9 @@ export default function Releves() {
   const [matieres] = useMatieresClasse(choix.classeId, classe?.niveau_code);
   const ecoles = useEcoles();
   const ecole = ecoles.find((e) => e.id === choix.ecoleId);
+  const equipes = useEquipes();
+  const maitre = equipes.parId[classe?.maitre_id];
+  const directeur = equipes.directeurs[choix.ecoleId];
   const [notes, setNotes] = useState({});
   const [res, setRes] = useState({});
 
@@ -127,8 +130,8 @@ export default function Releves() {
               <div>Appréciation : <b>{r?.appreciation || appreciation(r?.moyenne)}</b></div>
             </div>
             <div className="signatures">
-              <div>Le maître</div>
-              <div>Le directeur</div>
+              <div>Le maître<small>{nomComplet(maitre)}</small></div>
+              <div>Le directeur<small>{nomComplet(directeur)}</small></div>
               <div>Signature du parent</div>
             </div>
           </section>

@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from './contexte.jsx';
 import Crud from './Crud.jsx';
 import { OPTIONS, libelle } from './Formulaire.jsx';
-import { useListe } from './Choix.jsx';
+import { nomComplet, useEquipes, useListe } from './Choix.jsx';
 
 /**
  * Champs de la fiche école. Avec `rattachement`, ajoute DRENA puis IEPP (listes liées) :
@@ -52,6 +52,7 @@ export default function Ecoles() {
   const { ieppId, iepp, iepps, peutGerer, profil, role } = useApp();
   const nav = useNavigate();
   const secteurs = useListe('secteurs', { select: 'id, nom, iepp_id', ordre: 'nom' });
+  const equipes = useEquipes();
   const drenas = useListe('drena', { ordre: 'nom' });
   const rattachement = { drenas, iepps, ieppParDefaut: iepp, modifiable: role === 'superviseur' };
 
@@ -91,6 +92,7 @@ export default function Ecoles() {
         { cle: 'nom', label: 'École', rendu: (l) => <b>{l.nom}</b> },
         { cle: 'code_ecole', label: 'Code' },
         { cle: 'secteur', label: 'Secteur', rendu: (l) => l.secteurs?.nom },
+        { cle: 'directeur', label: 'Directeur', rendu: (l) => nomComplet(equipes.directeurs[l.id]) || <span className="discret">—</span> },
         { cle: 'statut', label: 'Statut', rendu: (l) => libelle('statut_ecole', l.statut) },
         { cle: 'cycle', label: 'Cycle', rendu: (l) => libelle('cycle_ecole', l.cycle) },
         { cle: 'localite', label: 'Localité' },
