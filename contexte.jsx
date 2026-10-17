@@ -10,7 +10,12 @@ export const ROLES = {
   conseiller: 'Conseiller pédagogique',
   directeur: "Directeur d'école",
   saisie: 'Agent de saisie',
+  enseignant: 'Enseignant',
 };
+
+/** Comptes rattachés à une seule école. */
+export const ROLES_ECOLE = ['directeur', 'saisie', 'enseignant'];
+export const RUBRIQUES_ENSEIGNANT = ['/compositions', '/releves', '/eleves', '/suivi-saisie', '/cartes'];
 
 export function AppProvider({ children }) {
   const [session, setSession] = useState(null);
@@ -22,6 +27,7 @@ export function AppProvider({ children }) {
   const [erreurProfil, setErreurProfil] = useState('');
   const [abonnementActif, setAbonnementActif] = useState(true);
   const [version, setVersion] = useState(0);
+  const [rubriques, setRubriques] = useState(RUBRIQUES_ENSEIGNANT);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
@@ -71,6 +77,10 @@ export function AppProvider({ children }) {
       actif = e ? true : !!ok; // fonction absente (script 005 non lancé) : pas de blocage
     }
     setAbonnementActif(actif);
+    if (p.role === 'enseignant') {
+      const { data: acc } = await supabase.from('acces_roles').select('rubriques').eq('role', 'enseignant').maybeSingle();
+      setRubriques(acc?.rubriques?.length ? acc.rubriques : RUBRIQUES_ENSEIGNANT);
+    }
     setChargement(false);
   }, [session]);
 
@@ -96,7 +106,7 @@ export function AppProvider({ children }) {
 
   const valeur = {
     session, profil, role, iepps, iepp, ieppId, setIeppId, annee, chargement, erreurProfil,
-    peutGerer, recharger, abonnementActif, actualiser, version,
+    peutGerer, recharger, abonnementActif, actualiser, version, rubriques,
     deconnexion: () => supabase.auth.signOut(),
   };
   return <Ctx.Provider value={valeur}>{children}</Ctx.Provider>;

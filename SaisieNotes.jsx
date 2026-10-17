@@ -86,6 +86,7 @@ export default function SaisieNotes() {
   const [msg, setMsg] = useState({ t: '', ok: true });
   const [envoi, setEnvoi] = useState(false);
   const [gestionMatieres, setGestionMatieres] = useState(false);
+  const [matiereId, setMatiereId] = useState('');
 
   useEffect(() => {
     supabase.from('compositions').select('*').eq('id', id).maybeSingle().then(({ data }) => setCompo(data));
@@ -103,6 +104,13 @@ export default function SaisieNotes() {
   useEffect(() => { chargerNotes(); }, [chargerNotes]);
 
   const calculs = useMemo(() => calculerClasse(inscrits, matieres, valeurs), [inscrits, matieres, valeurs]);
+  // Saisie matière par matière : la première matière est proposée par défaut
+  useEffect(() => {
+    if (matiereId !== 'toutes' && !matieres.some((m) => m.id === matiereId)) setMatiereId(matieres[0]?.id || '');
+  }, [matieres]); // eslint-disable-line react-hooks/exhaustive-deps
+  const affichees = matiereId && matiereId !== 'toutes' ? matieres.filter((m) => m.id === matiereId) : matieres;
+  const saisiesMatiere = (m) => inscrits.filter((i) => (valeurs[`${i.id}|${m.id}`] ?? '') !== '').length;
+  const rangMatiere = matieres.findIndex((m) => m.id === matiereId);
 
   if (!compo) return <p className="discret">Chargement…</p>;
   const verrou = !compo.saisie_ouverte && role !== 'superviseur';
@@ -184,6 +192,20 @@ export default function SaisieNotes() {
             <p className="alerte">Aucune matière pour cette classe. Cliquez sur « Choisir les matières » pour les ajouter, avec la note maximale et le coefficient.</p>
           ) : (
             <>
+              <div className="choix-ligne choix-matiere">
+                <label>Matière à saisir
+                  <select value={matiereId} onChange={(e) => setMatiereId(e.target.value)}>
+                    {matieres.map((m) => {
+                      const n = saisiesMatiere(m);
+                      return <option key={m.id} value={m.id}>{n === inscrits.length && n > 0 ? '✓ ' : ''}{m.libelle} (/{m.note_sur}) — {n}/{inscrits.length} saisie(s)</option>;
+                    })}
+                    <option value="toutes">Toutes les matières (tableau complet)</option>
+                  </select>
+                </label>
+                {rangMatiere >= 0 && rangMatiere < matieres.length - 1 && (
+                  <button type="button" className="btn-contour" onClick={() => setMatiereId(matieres[rangMatiere + 1].id)}>Matière suivante → {matieres[rangMatiere + 1].libelle}</button>
+                )}
+              </div>
               <div className="barre-outils">
                 <span className="discret">Tapez la note, ou <b>A</b> pour absent. Entrée = élève suivant. Le total, la moyenne, le rang et l'appréciation se calculent automatiquement. Saisie : {nbSaisies}/{nbAttendues}</span>
                 <div className="espace" />
@@ -195,19 +217,19 @@ export default function SaisieNotes() {
                   <thead>
                     <tr>
                       <th>N°</th><th>Élève</th>
-                      {matieres.map((m) => <th key={m.id} title={m.libelle}>{m.libelle.length > 14 ? m.code : m.libelle}<div className="discret">/{m.note_sur}{m.coefficient !== 1 ? ` ×${m.coefficient}` : ''}</div></th>)}
+                      {affichees.map((m) => <th key={m.id} title={m.libelle} className={affichees.length === 1 ? 'colonne-matiere' : ''}>{affichees.length === 1 || m.libelle.length <= 14 ? m.libelle : m.code}<div className="discret">/{m.note_sur}{m.coefficient !== 1 ? ` ×${m.coefficient}` : ''}</div></th>)}
                       <th className="calcule">Total</th><th className="calcule">Moy./10</th><th className="calcule">Rang</th><th className="calcule">Appréciation</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {inscrits.length === 0 && <tr><td colSpan={matieres.length + 6} className="vide">Aucun élève dans cette classe.</td></tr>}
+                    {inscrits.length === 0 && <tr><td colSpan={affichees.length + 6} className="vide">Aucun élève dans cette classe.</td></tr>}
                     {inscrits.map((i, r) => {
                       const k = calculs[i.id] || {};
                       return (
                         <tr key={i.id}>
                           <td>{r + 1}</td>
                           <td className="nom">{nomComplet(i.eleves)}</td>
-                          {matieres.map((m, c) => {
+                          {affichees.map((m, c) => {
                             const cle = `${i.id}|${m.id}`;
                             const val = valeurs[cle] ?? '';
                             return (

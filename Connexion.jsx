@@ -2,10 +2,19 @@ import { useEffect, useMemo, useState } from 'react';
 import { supabase, traduireErreur } from './supabase';
 import { ROLES } from './contexte.jsx';
 
-/** Identifiant saisi → email de connexion (un numéro de téléphone devient un email interne). */
+/** Identifiant saisi → email de connexion : email, matricule (contient une lettre) ou téléphone. */
+const parMatricule = (t) => `${t.replace(/[^A-Za-z0-9]/g, '').toLowerCase()}@mat.gestion-iepp.ci`;
+const parTelephone = (t) => `${t.replace(/[^0-9]/g, '')}@tel.gestion-iepp.ci`;
 export const versEmail = (x) => {
   const t = String(x || '').trim();
-  return t.includes('@') ? t.toLowerCase() : `${t.replace(/[^0-9]/g, '')}@tel.gestion-iepp.ci`;
+  if (t.includes('@')) return t.toLowerCase();
+  return /[A-Za-z]/.test(t) ? parMatricule(t) : parTelephone(t);
+};
+/** Toutes les formes possibles d'un identifiant (un matricule peut n'avoir que des chiffres). */
+const essais = (x) => {
+  const t = String(x || '').trim();
+  if (t.includes('@')) return [t.toLowerCase()];
+  return [...new Set([versEmail(t), parMatricule(t), parTelephone(t)])];
 };
 
 export default function Connexion() {
@@ -40,15 +49,21 @@ function FormConnexion({ versInscription }) {
     e.preventDefault();
     setEnvoi(true);
     setErreur('');
-    const { error } = await supabase.auth.signInWithPassword({ email: versEmail(email), password: mdp });
-    if (error) setErreur(traduireErreur(error));
+    let derniere = null;
+    for (const identifiant of essais(email)) {
+      const { error } = await supabase.auth.signInWithPassword({ email: identifiant, password: mdp });
+      if (!error) { setEnvoi(false); return; }
+      derniere = error;
+      if (!/invalid login credentials/i.test(error.message || '')) break;
+    }
+    setErreur(traduireErreur(derniere));
     setEnvoi(false);
   }
 
   return (
     <form className="carte connexion-carte" onSubmit={connecter}>
       <h2>Connexion</h2>
-      <label>Email ou numéro de téléphone<input value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus autoComplete="username" placeholder="ex. 0707000000 ou nom@exemple.com" /></label>
+      <label>Email, téléphone ou matricule<input value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus autoComplete="username" placeholder="ex. 123456A, 0707000000 ou nom@exemple.com" /></label>
       <label>Mot de passe
         <span className="champ-mdp">
           <input type={voir ? 'text' : 'password'} value={mdp} onChange={(e) => setMdp(e.target.value)} required />
@@ -65,9 +80,61 @@ function FormConnexion({ versInscription }) {
 }
 
 function FormInscription({ versConnexion }) {
+  const [typeCompte, setTypeCompte] = useState('enseignant');
+  if (typeCompte === 'enseignant') return <FormEnseignant versConnexion={versConnexion} changerType={setTypeCompte} />;
+  return <FormInscriptionAutres versConnexion={versConnexion} changerType={setTypeCompte} />;
+}
+
+function FormEnseignant({ versConnexion, changerType }) {
+  const [v, setV] = useState({ matricule: '', nom: '', telephone: '', mdp: '', mdp2: '' });
+  const [erreur, setErreur] = useState('');
+  const [envoi, setEnvoi] = useState(false);
+  const maj = (k) => (e) => setV({ ...v, [k]: e.target.value });
+
+  async function inscrire(e) {
+    e.preventDefault();
+    setErreur('');
+    if (v.mdp.length < 8) return setErreur('Le mot de passe doit contenir au moins 8 caractères.');
+    if (v.mdp !== v.mdp2) return setErreur('Les deux mots de passe ne sont pas identiques.');
+    setEnvoi(true);
+    const { error } = await supabase.rpc('inscription_personnel', {
+      p_matricule: v.matricule.trim(), p_nom: v.nom.trim(), p_mot_de_passe: v.mdp, p_telephone: v.telephone.trim() || null,
+    });
+    if (error) { setEnvoi(false); return setErreur(traduireErreur(error)); }
+    const r = await supabase.auth.signInWithPassword({ email: parMatricule(v.matricule), password: v.mdp });
+    setEnvoi(false);
+    if (r.error) setErreur(`Compte créé. Connectez-vous avec votre matricule et votre mot de passe. (${traduireErreur(r.error)})`);
+  }
+
+  return (
+    <form className="carte connexion-carte" onSubmit={inscrire}>
+      <h2>Créer mon compte</h2>
+      <label>Je suis
+        <select value="enseignant" onChange={(e) => changerType(e.target.value)}>
+          <option value="enseignant">Enseignant (avec mon matricule)</option>
+          {['directeur', 'saisie', 'conseiller', 'iepp'].map((r) => <option key={r} value={r}>{ROLES[r]}</option>)}
+        </select>
+      </label>
+      <p className="discret">Vous devez déjà être enregistré dans « Personnel » par votre directeur ou votre inspection, avec votre matricule et votre école.</p>
+      <label>Matricule<input className="champ-id" value={v.matricule} onChange={maj('matricule')} required placeholder="ex. 123456A" autoComplete="username" /></label>
+      <label>Nom de famille<input value={v.nom} onChange={maj('nom')} required placeholder="tel qu'enregistré, ex. TRAORE" /></label>
+      <label>Téléphone <span className="discret">(facultatif)</span><input type="tel" value={v.telephone} onChange={maj('telephone')} /></label>
+      <div className="deux-champs">
+        <label>Mot de passe<input type="password" value={v.mdp} onChange={maj('mdp')} required minLength={8} placeholder="8 caractères minimum" autoComplete="new-password" /></label>
+        <label>Confirmer<input type="password" value={v.mdp2} onChange={maj('mdp2')} required minLength={8} autoComplete="new-password" /></label>
+      </div>
+      {erreur && <p className="erreur">{erreur}</p>}
+      <button className="btn large" disabled={envoi}>{envoi ? 'Création du compte…' : 'Créer mon compte'}</button>
+      <button type="button" className="lien" onClick={versConnexion}>J'ai déjà un compte : se connecter</button>
+    </form>
+  );
+}
+
+function FormInscriptionAutres({ versConnexion, changerType }) {
   const [liste, setListe] = useState(null);
   const [structures, setStructures] = useState([]);
   const [v, setV] = useState({ role: 'directeur', drena: '', iepp: '', secteur: '', ecole: '', nom: '', telephone: '', email: '', mdp: '', mdp2: '' });
+  const majRole = (e) => (e.target.value === 'enseignant' ? changerType('enseignant') : setV({ ...v, role: e.target.value }));
   const [erreur, setErreur] = useState('');
   const [envoi, setEnvoi] = useState(false);
   const [attente, setAttente] = useState(null);
@@ -138,7 +205,8 @@ function FormInscription({ versConnexion }) {
     <form className="carte connexion-carte" onSubmit={inscrire}>
       <h2>Créer mon compte</h2>
       <label>Je suis
-        <select value={v.role} onChange={maj('role')}>
+        <select value={v.role} onChange={majRole}>
+          <option value="enseignant">Enseignant (avec mon matricule)</option>
           {['directeur', 'saisie', 'conseiller', 'iepp'].map((r) => <option key={r} value={r}>{ROLES[r]}</option>)}
         </select>
       </label>

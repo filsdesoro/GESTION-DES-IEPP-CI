@@ -248,7 +248,7 @@ function Convocations() {
   const { iepp, annee, profil } = useApp();
   const ecoles = useEcoles();
   const centres = useCentres();
-  const [mode, setMode] = useState(profil.role === 'directeur' || profil.role === 'saisie' ? 'ecole' : 'centre');
+  const [mode, setMode] = useState(['directeur', 'saisie', 'enseignant'].includes(profil.role) ? 'ecole' : 'centre');
   const [centreId, setCentreId] = useState(null);
   const [ecoleId, setEcoleId] = useState(null);
   const [liste, setListe] = useState([]);
@@ -272,7 +272,7 @@ function Convocations() {
     <>
       <div className="non-imprime">
         <div className="choix-ligne">
-          {profil.role !== 'directeur' && profil.role !== 'saisie' && (
+          {!['directeur', 'saisie', 'enseignant'].includes(profil.role) && (
             <label>Imprimer par
               <select value={mode} onChange={(e) => setMode(e.target.value)}>
                 <option value="centre">Centre d'examen</option>

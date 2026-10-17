@@ -52,7 +52,7 @@ export const MENU = [
 ];
 
 export default function App() {
-  const { session, profil, role, chargement, erreurProfil, deconnexion, abonnementActif } = useApp();
+  const { session, profil, role, chargement, erreurProfil, deconnexion, abonnementActif, rubriques } = useApp();
 
   if (!configOk) {
     return (
@@ -81,14 +81,17 @@ export default function App() {
 
   if (role !== 'superviseur' && !abonnementActif) return <AbonnementBloque />;
 
-  const autorises = MENU.filter((m) => m.roles.includes(role));
+  const autorises = role === 'enseignant'
+    ? MENU.filter((m) => rubriques.includes(m.chemin))
+    : MENU.filter((m) => m.roles.includes(role));
+  const accueil = autorises.some((m) => m.chemin === '/') ? '/' : autorises[0]?.chemin || '/';
   return (
     <Layout menu={autorises}>
       <Routes>
         {autorises.map((m) => <Route key={m.chemin} path={m.chemin} element={m.el} />)}
-        <Route path="/ecoles/:id" element={<EcoleDetail />} />
-        <Route path="/compositions/:id/saisie" element={<SaisieNotes />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {autorises.some((m) => m.chemin === '/ecoles') && <Route path="/ecoles/:id" element={<EcoleDetail />} />}
+        {autorises.some((m) => m.chemin === '/compositions') && <Route path="/compositions/:id/saisie" element={<SaisieNotes />} />}
+        <Route path="*" element={<Navigate to={accueil} replace />} />
       </Routes>
     </Layout>
   );

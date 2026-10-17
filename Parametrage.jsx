@@ -8,7 +8,7 @@ import { useListe, dateFr } from './Choix.jsx';
 export default function Parametrage() {
   const { role } = useApp();
   const onglets = [['circ', 'Circonscription']];
-  if (role === 'superviseur') onglets.push(['annees', 'Années scolaires'], ['drena', 'DRENA & circonscriptions'], ['bareme', 'Barème des matières']);
+  if (role === 'superviseur') onglets.push(['annees', 'Années scolaires'], ['drena', 'DRENA & circonscriptions'], ['bareme', 'Barème des matières'], ['acces', 'Accès du personnel']);
   const [onglet, setOnglet] = useState('circ');
   return (
     <div>
@@ -20,6 +20,7 @@ export default function Parametrage() {
       {onglet === 'annees' && <Annees />}
       {onglet === 'drena' && <DrenaIepp />}
       {onglet === 'bareme' && <Bareme />}
+      {onglet === 'acces' && <AccesPersonnel />}
     </div>
   );
 }
@@ -231,6 +232,55 @@ function Bareme() {
         <button className="btn-contour" onClick={copierPartout}>Copier sur tous les niveaux</button>
         <button className="btn" onClick={enregistrer}>Enregistrer {niveau}</button>
       </div>
+    </div>
+  );
+}
+
+// Rubriques que l'on peut ouvrir aux enseignants (comptes créés avec le matricule)
+const RUBRIQUES = [
+  ['/', 'Tableau de bord'],
+  ['/ecoles', 'Écoles (son école)'],
+  ['/annuaire', 'Annuaire des écoles'],
+  ['/eleves', 'Élèves'],
+  ['/compositions', 'Compositions (et saisie des notes)'],
+  ['/bilan', 'Bilan annuel'],
+  ['/rendement', 'Rendement des élèves'],
+  ['/releves', 'Relevés de notes'],
+  ['/suivi-saisie', 'Suivi de la saisie'],
+  ['/cartes', 'Cartes scolaires'],
+  ['/eps', 'Fiches EPS'],
+  ['/cepe', 'Convocations CEPE'],
+];
+
+function AccesPersonnel() {
+  const [choix, setChoix] = useState(null);
+  const [msg, setMsg] = useState('');
+  useEffect(() => {
+    supabase.from('acces_roles').select('rubriques').eq('role', 'enseignant').maybeSingle().then(({ data, error }) => {
+      if (error) setMsg("Lancez d'abord le script 013 dans Supabase.");
+      setChoix(data?.rubriques || ['/compositions', '/releves', '/eleves', '/suivi-saisie', '/cartes']);
+    });
+  }, []);
+  if (!choix) return <p className="discret">Chargement…</p>;
+  const basculer = (c) => setChoix(choix.includes(c) ? choix.filter((x) => x !== c) : [...choix, c]);
+  async function enregistrer() {
+    setMsg('');
+    const rubriques = RUBRIQUES.map(([c]) => c).filter((c) => choix.includes(c));
+    const { error } = await supabase.from('acces_roles').upsert({ role: 'enseignant', rubriques, updated_at: new Date().toISOString() });
+    setMsg(error ? traduireErreur(error) : 'ok');
+  }
+  return (
+    <div className="carte" style={{ maxWidth: 640 }}>
+      <h2 style={{ marginTop: 0 }}>Rubriques visibles par les enseignants</h2>
+      <p className="discret">Les enseignants se connectent avec leur matricule et ne voient que les données de leur école. Cochez les rubriques auxquelles ils ont accès. Le changement s'applique à leur prochaine connexion.</p>
+      <div className="liste-cases">
+        {RUBRIQUES.map(([c, l]) => (
+          <label key={c} className="case"><input type="checkbox" checked={choix.includes(c)} onChange={() => basculer(c)} /> {l}</label>
+        ))}
+      </div>
+      {msg && msg !== 'ok' && <p className="erreur">{msg}</p>}
+      {msg === 'ok' && <p className="succes">Accès enregistrés.</p>}
+      <div className="actions"><button className="btn" disabled={!choix.length} onClick={enregistrer}>Enregistrer</button></div>
     </div>
   );
 }

@@ -137,14 +137,14 @@ export default function Comptes() {
             {comptes.map((c) => (
               <tr key={c.id}>
                 <td><b>{c.nom_complet}</b></td>
-                <td>{emails[c.id]?.endsWith('@tel.gestion-iepp.ci') ? <>Tél. {emails[c.id].split('@')[0]}</> : emails[c.id] || <span className="discret">—</span>}{c.telephone && !emails[c.id]?.startsWith(c.telephone.replace(/[^0-9]/g, '')) && <div className="discret">Tél. {c.telephone}</div>}</td>
+                <td>{emails[c.id]?.endsWith('@tel.gestion-iepp.ci') ? <>Tél. {emails[c.id].split('@')[0]}</> : emails[c.id]?.endsWith('@mat.gestion-iepp.ci') ? <>Matricule {emails[c.id].split('@')[0].toUpperCase()}</> : emails[c.id] || <span className="discret">—</span>}{c.telephone && !emails[c.id]?.startsWith(c.telephone.replace(/[^0-9]/g, '')) && <div className="discret">Tél. {c.telephone}</div>}</td>
                 <td>{ROLES[c.role]}</td>
                 <td>{portee(c)}</td>
                 <td>{c.actif ? <span className="badge vert">Actif</span> : /attente de validation/i.test(c.motif_blocage || '') ? <span className="badge orange">À valider</span> : <><span className="badge rouge">Bloqué</span>{c.motif_blocage && <div className="discret">{c.motif_blocage}</div>}</>}</td>
                 <td className="actions-ligne">
                   {c.id !== profil.id && (role === 'superviseur' || c.role !== 'superviseur') && (
                     <>
-                      <button className="lien" onClick={() => setEdition({ ...c })}>Modifier</button>
+                      {c.role !== 'enseignant' && <button className="lien" onClick={() => setEdition({ ...c })}>Modifier</button>}
                       <button className="lien" onClick={() => reinitialiser(c)}>Nouveau mot de passe</button>
                       <button className="lien" onClick={() => basculer(c)}>{c.actif ? 'Bloquer' : /attente de validation/i.test(c.motif_blocage || '') ? 'Valider' : 'Débloquer'}</button>
                       <button className="lien danger" onClick={() => supprimer(c)}>Supprimer</button>

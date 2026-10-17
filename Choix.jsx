@@ -22,7 +22,7 @@ export function useListe(table, { select = '*', filtre = {}, ordre, actif = true
 export function useEcoles() {
   const { ieppId, profil } = useApp();
   const filtre = { iepp_id: ieppId };
-  if (profil?.role === 'directeur' || profil?.role === 'saisie') filtre.id = profil.ecole_id;
+  if (['directeur', 'saisie', 'enseignant'].includes(profil?.role)) filtre.id = profil.ecole_id;
   if (profil?.role === 'conseiller') filtre.secteur_id = profil.secteur_id;
   return useListe('ecoles', { select: 'id, nom, code_ecole, secteur_id, statut, cycle, localite', filtre, ordre: 'nom' });
 }

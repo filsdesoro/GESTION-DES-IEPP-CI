@@ -69,7 +69,7 @@ export default function Ecoles() {
   }
   const filtre = { iepp_id: ieppId };
   if (profil.role === 'conseiller') filtre.secteur_id = profil.secteur_id;
-  if (profil.role === 'directeur' || profil.role === 'saisie') filtre.id = profil.ecole_id;
+  if (['directeur', 'saisie', 'enseignant'].includes(profil.role)) filtre.id = profil.ecole_id;
 
   return (
     <Crud titre="Écoles" table="ecoles" filtre={filtre} lectureSeule={!peutGerer}

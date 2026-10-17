@@ -13,7 +13,7 @@ export default function BilanAnnuel() {
       <h1>Bilan annuel</h1>
       <div className="onglets">
         <button className={vue === 'classe' ? 'actif' : ''} onClick={() => setVue('classe')}>Bilan d'une classe</button>
-        {role !== 'directeur' && role !== 'saisie' && <button className={vue === 'circ' ? 'actif' : ''} onClick={() => setVue('circ')}>Synthèse de la circonscription</button>}
+        {!['directeur', 'saisie', 'enseignant'].includes(role) && <button className={vue === 'circ' ? 'actif' : ''} onClick={() => setVue('circ')}>Synthèse de la circonscription</button>}
       </div>
       {vue === 'classe' ? <BilanClasse /> : <SyntheseCirc ieppId={ieppId} annee={annee} />}
     </div>

@@ -405,3 +405,6 @@ input.champ-id { font-size: 17px; text-transform: uppercase; }
 .classes-tableau td b { font-family: inherit; font-size: 15px; color: var(--vert); }
 .signatures small { display: block; margin-top: 4px; font-weight: 700; font-size: 12px; }
 .ligne-directeur { margin: -10px 0 16px; }
+.liste-cases { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; margin: 14px 0; } .liste-cases label.case { display: flex; gap: 8px; align-items: center; font-weight: 600; } @media (max-width: 600px) { .liste-cases { grid-template-columns: 1fr; } }
+.choix-matiere select { min-width: 320px; font-weight: 700; }
+.tableau.saisie th.colonne-matiere { min-width: 160px; }
