@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { ROLES, useApp } from './contexte.jsx';
 import { supabase, traduireErreur } from './supabase';
 import Modal from './Modal.jsx';
+import { BandeauAbonnement } from './Abonnements.jsx';
 
 export default function Layout({ menu, children }) {
   const { profil, role, iepps, iepp, ieppId, setIeppId, annee, deconnexion, actualiser, version } = useApp();
@@ -17,6 +18,7 @@ export default function Layout({ menu, children }) {
 
   return (
     <div className="appli">
+      <BandeauAbonnement />
       <header className="entete">
         <button className="burger" aria-label="Menu" onClick={() => setOuvert(!ouvert)}>☰</button>
         <div className="marque">

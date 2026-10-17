@@ -237,7 +237,7 @@ export default function Abonnements() {
         <h1>Abonnements {annee.libelle}</h1>
         <button className="btn-contour" disabled={!config} onClick={() => setTarif({ ...config })}>Tarif et instructions</button>
       </div>
-      {config && <p className="sous-titre">Tarif : <strong>{fcfa(config.montant, config.devise)}</strong> par circonscription et par année scolaire{config.contact ? ` — contact : ${config.contact}` : ''}.</p>}
+      {config && <p className="sous-titre">Tarif : <strong>{fcfa(config.montant, config.devise)}</strong> par circonscription et par année scolaire{config.contact ? ` — contact : ${config.contact}` : ''}. Les abonnements {annee.libelle} expirent le <strong>{dateFr(annee.date_fin)}</strong>{joursAvant(annee.date_fin) >= 0 ? ` (dans ${joursAvant(annee.date_fin)} jours)` : ''}.</p>}
 
       <div className="onglets">
         <button className={vue === 'iepp' ? 'actif' : ''} onClick={() => setVue('iepp')}>Circonscriptions</button>
@@ -439,6 +439,58 @@ function IdsRecus({ config, iepps, apresAjout }) {
           </tbody>
         </table>
       </div>
+    </>
+  );
+}
+
+// =====================================================================
+//  Bandeau d'échéance : « Votre abonnement expire dans N jours »
+//  (l'abonnement couvre l'année scolaire : il expire à la date de fin de l'année active)
+// =====================================================================
+export const SEUIL_ALERTE_JOURS = 30;
+
+export function joursAvant(dateFin) {
+  if (!dateFin) return null;
+  const fin = new Date(`${dateFin}T00:00:00`);
+  const auj = new Date();
+  auj.setHours(0, 0, 0, 0);
+  return Math.round((fin - auj) / 86400000);
+}
+
+export function BandeauAbonnement() {
+  const { role, annee, abonnementActif } = useApp();
+  const [config] = useConfig();
+  const [ouvert, setOuvert] = useState(false);
+  const jours = joursAvant(annee?.date_fin);
+  if (role === 'superviseur' || !abonnementActif || jours === null || jours < 0 || jours > SEUIL_ALERTE_JOURS) return null;
+  const quand = jours === 0 ? "aujourd'hui" : jours === 1 ? 'demain' : `dans ${jours} jours`;
+  return (
+    <>
+      <div className={`bandeau-abonnement ${jours <= 7 ? 'urgent' : ''}`}>
+        <span>⏳ <b>Votre abonnement expire {quand}</b> (le {dateFr(annee.date_fin)}), à la fin de l'année scolaire {annee.libelle}.</span>
+        <button className="btn petit" onClick={() => setOuvert(true)}>Renouveler</button>
+      </div>
+      {ouvert && (
+        <Modal titre="Renouveler l'abonnement" fermer={() => setOuvert(false)}>
+          {config && (
+            <div className="tarif" style={{ margin: '0 0 14px' }}>
+              <span>Abonnement annuel</span>
+              <strong>{fcfa(config.montant, config.devise)}</strong>
+              <small>par circonscription, pour l'année scolaire suivante</small>
+            </div>
+          )}
+          {role === 'iepp' ? (
+            <>
+              {config?.instructions && <p className="instructions">{config.instructions}</p>}
+              {config?.contact && <p>Numéro de paiement / contact : <b>{config.contact}</b></p>}
+              <p className="discret">Conservez le SMS de paiement. Dès l'ouverture de la nouvelle année scolaire, le logiciel vous demandera l'<b>ID de la transaction</b>, puis votre <b>code d'activation</b> : l'accès de toute la circonscription sera rétabli aussitôt.</p>
+            </>
+          ) : (
+            <p>Le renouvellement est réglé par l'<b>inspecteur</b> de votre circonscription. Merci de le prévenir.{config?.contact ? <> Contact du gestionnaire : <b>{config.contact}</b>.</> : null}</p>
+          )}
+          <div className="actions"><button className="btn" onClick={() => setOuvert(false)}>J'ai compris</button></div>
+        </Modal>
+      )}
     </>
   );
 }

@@ -408,3 +408,7 @@ input.champ-id { font-size: 17px; text-transform: uppercase; }
 .liste-cases { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; margin: 14px 0; } .liste-cases label.case { display: flex; gap: 8px; align-items: center; font-weight: 600; } @media (max-width: 600px) { .liste-cases { grid-template-columns: 1fr; } }
 .choix-matiere select { min-width: 320px; font-weight: 700; }
 .tableau.saisie th.colonne-matiere { min-width: 160px; }
+.bandeau-abonnement { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 8px 24px; background: #fff4d6; color: #6b4a00; border-bottom: 1px solid #f0d99a; font-size: 14px; }
+.bandeau-abonnement.urgent { background: #fde2df; color: #8f251b; border-bottom-color: #f3b8b1; }
+.bandeau-abonnement .btn.petit { background: #17332d; border-color: #17332d; }
+@media print { .bandeau-abonnement { display: none !important; } }
