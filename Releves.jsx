@@ -43,7 +43,7 @@ export default function Releves() {
   const [choix, setChoix] = useState({ ecoleId: null, classeId: null });
   const [classe, setClasse] = useState(null);
   const [inscrits] = useInscrits(choix.classeId);
-  const [matieres] = useMatieresClasse(choix.classeId, classe?.niveau_code);
+  const [matieresClasse, matieresPropres] = useMatieresClasse(choix.classeId, classe?.niveau_code);
   const ecoles = useEcoles();
   const ecole = ecoles.find((e) => e.id === choix.ecoleId);
   const equipes = useEquipes();
@@ -66,6 +66,10 @@ export default function Releves() {
       .then(({ data }) => setRes(Object.fromEntries((data || []).map((x) => [x.inscription_id, x]))));
   }, [compoId, inscrits]);
 
+  // Seules les matières cochées par l'enseignant de la classe figurent sur le relevé.
+  // S'il ne les a pas encore choisies : uniquement les matières réellement notées dans cette composition.
+  const matieresNotees = new Set(Object.values(notes).filter((n) => n.absent || n.note !== null).map((n) => n.matiere_id));
+  const matieres = matieresPropres ? matieresClasse : matieresClasse.filter((m) => matieresNotees.has(m.id));
   const compo = compos.find((c) => c.id === compoId);
   const sansResultat = inscrits.length > 0 && Object.keys(res).length === 0;
 
@@ -77,6 +81,9 @@ export default function Releves() {
           <ChoixComposition compos={compos} valeur={compoId} changer={setCompoId} />
         </div>
         <ChoixEcoleClasse valeur={choix} changer={(v, c) => { setChoix(v); setClasse(c); }} niveaux={compo?.niveaux} />
+        {classe && inscrits.length > 0 && !matieresPropres && (
+          <p className="alerte">L'enseignant n'a pas encore choisi les matières de la classe {classe.nom} (Compositions → Saisir les notes → « Choisir les matières »). En attendant, seules les matières déjà notées figurent sur les relevés.</p>
+        )}
         {sansResultat && <p className="alerte">Les moyennes n'ont pas encore été calculées pour cette classe. Ouvrez la saisie des notes de cette composition et cliquez sur « Enregistrer les notes ».</p>}
         {inscrits.length > 0 && <div className="barre-outils"><span className="discret">{inscrits.length} relevé(s)</span><div className="espace" /><button className="btn" onClick={() => window.print()}>Imprimer les relevés</button></div>}
       </div>
