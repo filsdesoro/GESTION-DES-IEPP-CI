@@ -1,26 +1,22 @@
 -- =====================================================================
---  GESTION IEPP — Période d'abonnement : du 10/10 au 10/10 (modifiable)
---  L'abonnement de l'année scolaire N-(N+1) court du 10 octobre N au 10 octobre N+1
---  (ex. du 10/10/2026 au 10/10/2027 ; jour et mois réglables dans
---  Abonnements → Tarif et instructions).
---  Après cette date, l'accès de l'IEPP est bloqué jusqu'au renouvellement.
+--  GESTION IEPP — Durée de l'abonnement = l'année scolaire en cours
+--  • Une IEPP peut s'abonner à tout moment de l'année scolaire.
+--  • Quel que soit le jour du paiement, l'accès dure jusqu'à la date de
+--    FIN de l'année scolaire active (Paramétrage → Années scolaires) PLUS 1 MOIS.
+--  • Une « date de fin précise » peut remplacer cette date
+--    (Abonnements → Tarif et instructions) ; vide = fin de l'année scolaire + 1 mois.
 --  À lancer APRÈS 005. Peut être relancé sans risque.
 -- =====================================================================
 
-alter table config_abonnement add column if not exists echeance_jour smallint not null default 10 check (echeance_jour between 1 and 31);
-alter table config_abonnement add column if not exists echeance_mois smallint not null default 10 check (echeance_mois between 1 and 12);
-
--- Date de fin précise (prioritaire sur la date anniversaire) : 10/10/2026
 alter table config_abonnement add column if not exists date_fin date;
-update config_abonnement set echeance_jour = 10, echeance_mois = 10, date_fin = date '2026-10-10' where id = 1;
+update config_abonnement set date_fin = null where id = 1;
 
--- Date de fin d'abonnement pour une année scolaire (jour/mois de la config, l'année suivant la rentrée)
+-- Date de fin d'abonnement : date précise si renseignée, sinon fin de l'année scolaire + 1 mois
 create or replace function fin_abonnement(p_annee uuid) returns date
 language sql stable security definer set search_path = public as $$
-  select coalesce(c.date_fin, make_date(extract(year from s.date_debut)::int + 1, c.echeance_mois,
-                   least(c.echeance_jour::int, extract(day from (date_trunc('month', make_date(extract(year from s.date_debut)::int + 1, c.echeance_mois, 1)) + interval '1 month - 1 day'))::int)))
-    from annees_scolaires s, config_abonnement c
-   where s.id = p_annee and c.id = 1
+  select coalesce(c.date_fin, (s.date_fin + interval '1 month')::date)
+    from annees_scolaires s left join config_abonnement c on c.id = 1
+   where s.id = p_annee
 $$;
 
 -- Abonnement valide ET date de fin non dépassée
@@ -30,10 +26,11 @@ language sql stable security definer set search_path = public as $$
     select 1 from abonnements a
       join annees_scolaires s on s.id = a.annee_id and s.active
      where a.iepp_id = p_iepp and a.statut = 'valide'
-       and current_date <= coalesce(fin_abonnement(s.id), s.date_fin)
+       and current_date <= coalesce(fin_abonnement(s.id), (s.date_fin + interval '1 month')::date)
   )
 $$;
 grant execute on function fin_abonnement(uuid), abonnement_actif(uuid) to authenticated;
 
 notify pgrst, 'reload schema';
-select 'Abonnements du ' || to_char(fin_abonnement(id) - interval '1 year', 'DD/MM/YYYY') || ' au ' || to_char(fin_abonnement(id), 'DD/MM/YYYY') as resultat from annees_scolaires where active;
+select 'Abonnements ' || libelle || ' valables jusqu''au ' || to_char(fin_abonnement(id), 'DD/MM/YYYY') as resultat
+  from annees_scolaires where active;
