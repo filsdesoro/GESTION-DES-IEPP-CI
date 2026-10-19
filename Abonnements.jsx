@@ -229,7 +229,7 @@ export default function Abonnements() {
 
   async function enregistrerTarif(e) {
     e.preventDefault();
-    const { error } = await supabase.from('config_abonnement').upsert({ id: 1, montant: Number(tarif.montant) || 0, devise: tarif.devise || 'FCFA', instructions: tarif.instructions || '', contact: tarif.contact || null, echeance_jour: Number(tarif.echeance_jour || 10), echeance_mois: Number(tarif.echeance_mois || 10), updated_at: new Date().toISOString() });
+    const { error } = await supabase.from('config_abonnement').upsert({ id: 1, montant: Number(tarif.montant) || 0, devise: tarif.devise || 'FCFA', instructions: tarif.instructions || '', contact: tarif.contact || null, echeance_jour: Number(tarif.echeance_jour || 10), echeance_mois: Number(tarif.echeance_mois || 10), date_fin: tarif.date_fin || null, updated_at: new Date().toISOString() });
     if (error) return setTarif({ ...tarif, erreur: traduireErreur(error) });
     setTarif(null);
     chargerConfig();
@@ -346,6 +346,9 @@ export default function Abonnements() {
                 <select value={tarif.echeance_mois ?? 10} onChange={(e) => setTarif({ ...tarif, echeance_mois: Number(e.target.value) })}>
                   {['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'].map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
                 </select>
+              </label>
+              <label className="pleine"><span>Date de fin précise (prioritaire — laissez vide pour utiliser la date anniversaire)</span>
+                <input type="date" value={tarif.date_fin || ''} onChange={(e) => setTarif({ ...tarif, date_fin: e.target.value || null })} />
               </label>
               <p className="pleine discret" style={{ margin: 0 }}>Pour l'année {annee.libelle}, l'abonnement court du <b>{dateFr(debutAbonnement(annee, tarif))}</b> au <b>{dateFr(finAbonnement(annee, tarif))}</b>. Ensuite l'accès est bloqué jusqu'au renouvellement.</p>
               <label className="pleine"><span>Numéro(s) de paiement / contact</span>
@@ -468,6 +471,7 @@ export const SEUIL_ALERTE_JOURS = 30;
 
 /** Date de fin d'abonnement (AAAA-MM-JJ) : jour/mois réglés, l'année qui suit la rentrée. */
 export function finAbonnement(annee, config) {
+  if (config?.date_fin) return config.date_fin;
   if (!annee?.date_debut) return annee?.date_fin || null;
   const an = Number(annee.date_debut.slice(0, 4)) + 1;
   const mois = Number(config?.echeance_mois || 10);

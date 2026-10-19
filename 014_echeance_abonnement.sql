@@ -10,14 +10,15 @@
 alter table config_abonnement add column if not exists echeance_jour smallint not null default 10 check (echeance_jour between 1 and 31);
 alter table config_abonnement add column if not exists echeance_mois smallint not null default 10 check (echeance_mois between 1 and 12);
 
--- Date anniversaire : le 10/10
-update config_abonnement set echeance_jour = 10, echeance_mois = 10 where id = 1;
+-- Date de fin précise (prioritaire sur la date anniversaire) : 10/10/2026
+alter table config_abonnement add column if not exists date_fin date;
+update config_abonnement set echeance_jour = 10, echeance_mois = 10, date_fin = date '2026-10-10' where id = 1;
 
 -- Date de fin d'abonnement pour une année scolaire (jour/mois de la config, l'année suivant la rentrée)
 create or replace function fin_abonnement(p_annee uuid) returns date
 language sql stable security definer set search_path = public as $$
-  select make_date(extract(year from s.date_debut)::int + 1, c.echeance_mois,
-                   least(c.echeance_jour::int, extract(day from (date_trunc('month', make_date(extract(year from s.date_debut)::int + 1, c.echeance_mois, 1)) + interval '1 month - 1 day'))::int))
+  select coalesce(c.date_fin, make_date(extract(year from s.date_debut)::int + 1, c.echeance_mois,
+                   least(c.echeance_jour::int, extract(day from (date_trunc('month', make_date(extract(year from s.date_debut)::int + 1, c.echeance_mois, 1)) + interval '1 month - 1 day'))::int)))
     from annees_scolaires s, config_abonnement c
    where s.id = p_annee and c.id = 1
 $$;
