@@ -5,6 +5,7 @@ import { ChoixEcoleClasse, dateFr, fmt, nomComplet, useEcoles, useEquipes } from
 import { useInscrits } from './Eleves.jsx';
 import { ChoixComposition, libelleComposition, useCompositions } from './Compositions.jsx';
 import { useBareme, useMatieresClasse } from './SaisieNotes.jsx';
+import { signalerSuppression, supprimerNotes } from './Corbeille.jsx';
 
 export function appreciation(m) {
   if (m === null || m === undefined) return '';
@@ -37,8 +38,10 @@ export function EnTeteOfficiel({ iepp, ecole, droite }) {
 }
 
 export default function Releves() {
-  const { iepp, annee } = useApp();
+  const { iepp, annee, role } = useApp();
   const [compos] = useCompositions();
+  const [recharge, setRecharge] = useState(0);
+  const peutSupprimer = role !== 'conseiller';
   const [compoId, setCompoId] = useState('');
   const [choix, setChoix] = useState({ ecoleId: null, classeId: null });
   const [classe, setClasse] = useState(null);
@@ -64,7 +67,7 @@ export default function Releves() {
     });
     supabase.from('resultats_composition').select('*').eq('composition_id', compoId).in('inscription_id', ids)
       .then(({ data }) => setRes(Object.fromEntries((data || []).map((x) => [x.inscription_id, x]))));
-  }, [compoId, inscrits]);
+  }, [compoId, inscrits, recharge]);
 
   // Seules les matières cochées par l'enseignant de la classe figurent sur le relevé.
   // S'il ne les a pas encore choisies : uniquement les matières réellement notées dans cette composition.
@@ -72,6 +75,15 @@ export default function Releves() {
   const matieres = matieresPropres ? matieresClasse : matieresClasse.filter((m) => matieresNotees.has(m.id));
   const compo = compos.find((c) => c.id === compoId);
   const sansResultat = inscrits.length > 0 && Object.keys(res).length === 0;
+
+  async function effacerNotes(i) {
+    const qui = i ? nomComplet(i.eleves) : `toute la classe ${classe.nom}`;
+    if (!confirm(`Supprimer les notes de ${qui} pour « ${libelleComposition(compo)} » ?\nLes moyennes et les rangs seront recalculés.\n(Vous pourrez annuler, ou les restaurer depuis la Corbeille.)`)) return;
+    const err = await supprimerNotes(compoId, classe.id, i ? i.id : null);
+    if (err) return alert(err);
+    signalerSuppression(`Notes de ${qui}`);
+    setRecharge((n) => n + 1);
+  }
 
   return (
     <div>
@@ -85,7 +97,7 @@ export default function Releves() {
           <p className="alerte">L'enseignant n'a pas encore choisi les matières de la classe {classe.nom} (Compositions → Saisir les notes → « Choisir les matières »). En attendant, seules les matières déjà notées figurent sur les relevés.</p>
         )}
         {sansResultat && <p className="alerte">Les moyennes n'ont pas encore été calculées pour cette classe. Ouvrez la saisie des notes de cette composition et cliquez sur « Enregistrer les notes ».</p>}
-        {inscrits.length > 0 && <div className="barre-outils"><span className="discret">{inscrits.length} relevé(s)</span><div className="espace" /><button className="btn" onClick={() => window.print()}>Imprimer les relevés</button></div>}
+        {inscrits.length > 0 && <div className="barre-outils"><span className="discret">{inscrits.length} relevé(s)</span><div className="espace" />{peutSupprimer && compo && <button className="btn-contour danger" onClick={() => effacerNotes(null)}>Supprimer les notes de la classe</button>}<button className="btn" onClick={() => window.print()}>Imprimer les relevés</button></div>}
       </div>
 
       {(!classe || inscrits.length === 0) && (
@@ -99,6 +111,7 @@ export default function Releves() {
         let totalMax = 0;
         return (
           <section key={i.id} className="document releve">
+            {peutSupprimer && <div className="non-imprime actions-doc"><button className="lien danger" onClick={() => effacerNotes(i)}>Supprimer les notes de cet élève</button></div>}
             <EnTeteOfficiel iepp={iepp} ecole={ecole} droite={<div>Année scolaire {annee?.libelle}</div>} />
             <h2 className="titre-doc">RELEVÉ DE NOTES — {libelleComposition(compo).toUpperCase()}</h2>
             <div className="infos-eleve">

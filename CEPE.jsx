@@ -5,6 +5,7 @@ import Crud from './Crud.jsx';
 import { ChoixEcoleClasse, dateFr, fmt, nomComplet, useEcoles, useListe } from './Choix.jsx';
 import { EnTeteOfficiel } from './Releves.jsx';
 import { usePersonnelIepp } from './Secteurs.jsx';
+import { signalerSuppression } from './Corbeille.jsx';
 
 export default function CEPE() {
   const { peutGerer, annee } = useApp();
@@ -253,6 +254,17 @@ function Convocations() {
   const [ecoleId, setEcoleId] = useState(null);
   const [liste, setListe] = useState([]);
   const [dateExamen, setDateExamen] = useState('');
+  const [recharge, setRecharge] = useState(0);
+  const peutSupprimer = profil.role !== 'conseiller';
+
+  async function retirer(c) {
+    const nom = nomComplet(c.inscriptions.eleves);
+    if (!confirm(`Retirer ${nom} des candidats au CEPE ?\nSa convocation disparaît (l'élève reste inscrit dans sa classe).\n(Vous pourrez annuler, ou le restaurer depuis la Corbeille.)`)) return;
+    const { error } = await supabase.from('cepe_candidats').delete().eq('id', c.id);
+    if (error) return alert(traduireErreur(error));
+    signalerSuppression(`Candidat CEPE ${nom}`);
+    setRecharge((n) => n + 1);
+  }
 
   useEffect(() => {
     const charger = async () => {
@@ -263,7 +275,7 @@ function Convocations() {
       setListe((data || []).filter((c) => c.inscriptions?.eleves).sort((a, b) => String(a.numero_table || 'zz').localeCompare(String(b.numero_table || 'zz')) || nomComplet(a.inscriptions.eleves).localeCompare(nomComplet(b.inscriptions.eleves))));
     };
     charger();
-  }, [mode, centreId, ecoleId, annee]);
+  }, [mode, centreId, ecoleId, annee, recharge]);
 
   useEffect(() => { if (!centreId && centres.length) setCentreId(centres[0].id); }, [centres, centreId]);
   useEffect(() => { if (!ecoleId && ecoles.length === 1) setEcoleId(ecoles[0].id); }, [ecoles, ecoleId]);
@@ -307,6 +319,7 @@ function Convocations() {
           const e = c.inscriptions.eleves;
           return (
             <section key={c.id} className="convocation">
+              {peutSupprimer && <div className="non-imprime actions-doc"><button className="lien danger" onClick={() => retirer(c)}>Supprimer cette convocation (retirer le candidat)</button></div>}
               <EnTeteOfficiel iepp={iepp} droite={<div>Session {annee.libelle.split('-').pop()}</div>} />
               <h2 className="titre-doc">CONVOCATION — CEPE</h2>
               <div className="conv-grille">

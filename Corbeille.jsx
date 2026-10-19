@@ -12,11 +12,26 @@ const NOMS = {
   ecoles: 'École', classes: 'Classe', secteurs: 'Secteur', compositions: 'Composition', matieres: 'Matière',
   abonnements: 'Abonnement', paiements_recus: 'ID de paiement', annees_scolaires: 'Année scolaire',
   drena: 'DRENA', iepp: 'Circonscription', cepe_centres: 'Centre CEPE', fiches_eps: 'Fiche EPS', emplois: 'Emploi',
+  cepe_candidats: 'Candidat CEPE', profils: 'Compte utilisateur', 'auth.users': 'Compte utilisateur',
 };
 
 function messageErreur(e) {
   const m = traduireErreur(e);
   return /function|schema cache/i.test(m) ? 'La corbeille n’est pas encore installée : lancez le script 016_corbeille.sql dans Supabase.' : m;
+}
+
+/** Supprime un élève (son inscription, ses notes ; la fiche élève si plus aucune inscription). */
+export async function supprimerEleve(inscriptionId) {
+  let { error } = await supabase.rpc('supprimer_eleve', { p_inscription: inscriptionId });
+  if (error && /function|schema cache/i.test(error.message)) ({ error } = await supabase.from('inscriptions').delete().eq('id', inscriptionId));
+  return error ? traduireErreur(error) : null;
+}
+
+/** Supprime les notes d'une composition (un élève, ou toute la classe si inscriptionId est vide). */
+export async function supprimerNotes(compositionId, classeId, inscriptionId = null) {
+  const { error } = await supabase.rpc('supprimer_notes', { p_composition: compositionId, p_classe: classeId, p_inscription: inscriptionId });
+  if (!error) return null;
+  return /function|schema cache/i.test(error.message) ? 'Lancez d’abord le script 017_suppressions_pages.sql dans Supabase.' : traduireErreur(error);
 }
 
 /** Barre affichée quelques secondes après une suppression, avec le bouton « Annuler ». */

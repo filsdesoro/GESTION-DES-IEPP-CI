@@ -3,9 +3,11 @@ import { useApp } from './contexte.jsx';
 import { supabase } from './supabase';
 import { fmt, useListe } from './Choix.jsx';
 import { ChoixComposition, useCompositions } from './Compositions.jsx';
+import { signalerSuppression, supprimerNotes } from './Corbeille.jsx';
 
 export default function SuiviSaisie() {
-  const { ieppId, profil } = useApp();
+  const { ieppId, profil, peutGerer } = useApp();
+  const [recharge, setRecharge] = useState(0);
   const [compos] = useCompositions();
   const [compoId, setCompoId] = useState('');
   const [lignes, setLignes] = useState([]);
@@ -17,7 +19,15 @@ export default function SuiviSaisie() {
   useEffect(() => {
     if (!compoId) return;
     supabase.from('v_suivi_saisie').select('*').eq('composition_id', compoId).order('ecole').then(({ data }) => setLignes(data || []));
-  }, [compoId]);
+  }, [compoId, recharge]);
+
+  async function effacerNotes(c) {
+    if (!confirm(`Supprimer toutes les notes saisies de la classe ${c.classe} (${c.ecole}) pour cette composition ?\n(Vous pourrez annuler, ou les restaurer depuis la Corbeille.)`)) return;
+    const err = await supprimerNotes(compoId, c.classe_id);
+    if (err) return alert(err);
+    signalerSuppression(`Notes de ${c.classe} — ${c.ecole}`);
+    setRecharge((n) => n + 1);
+  }
 
   // Regroupement par école
   const ecoles = useMemo(() => {
@@ -74,7 +84,11 @@ export default function SuiviSaisie() {
                       <div className="jauge"><span className={couleur(e.taux)} style={{ width: `${e.taux}%` }} /></div>
                       <small>{fmt(e.taux, 0)} %</small>
                     </td>
-                    <td className="etiquettes">{e.classes.map((c) => <span key={c.classe_id} className={`badge ${couleur(Number(c.taux_saisie) || 0)}`}>{c.classe} {fmt(c.taux_saisie, 0) || 0}%</span>)}</td>
+                    <td className="etiquettes">{e.classes.map((c) => (
+                      <span key={c.classe_id} className={`badge ${couleur(Number(c.taux_saisie) || 0)}`}>{c.classe} {fmt(c.taux_saisie, 0) || 0}%
+                        {peutGerer && c.nb_notes_saisies > 0 && <button className="croix-suppr" title={`Supprimer les notes de ${c.classe}`} onClick={() => effacerNotes(c)}>✕</button>}
+                      </span>
+                    ))}</td>
                   </tr>
                 ))}
               </tbody>

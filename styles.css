@@ -422,3 +422,10 @@ input.champ-id { font-size: 17px; text-transform: uppercase; }
 .btn-contour.danger { color: #b3261e; border-color: #e6b3ae; }
 .btn-contour.danger:hover { background: #fdecea; }
 .titre-action { font-size: 14px; font-weight: 500; margin-left: 14px; font-family: inherit; }
+.actions-doc { text-align: right; margin: -6px 0 6px; }
+.croix-suppr { background: none; border: 0; margin-left: 6px; padding: 0 2px; color: inherit; opacity: .55; cursor: pointer; font-size: 12px; line-height: 1; }
+.croix-suppr:hover { opacity: 1; color: var(--rouge); }
+.carte-scolaire { position: relative; }
+.croix-carte { position: absolute; top: -10px; right: -10px; z-index: 2; background: #fff; border: 1px solid #e6b3ae; color: #b3261e;
+  border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 12px; line-height: 1; padding: 0; }
+.croix-carte:hover { background: #fdecea; }

@@ -2,12 +2,22 @@ import { useState } from 'react';
 import { useApp } from './contexte.jsx';
 import { ChoixEcoleClasse, dateFr, nomComplet, useEcoles } from './Choix.jsx';
 import { useInscrits } from './Eleves.jsx';
+import { signalerSuppression, supprimerEleve } from './Corbeille.jsx';
 
 export default function CartesScolaires() {
-  const { iepp, annee } = useApp();
+  const { iepp, annee, role } = useApp();
+  const peutSupprimer = role !== 'conseiller';
   const [choix, setChoix] = useState({ ecoleId: null, classeId: null });
   const [classe, setClasse] = useState(null);
-  const [inscrits] = useInscrits(choix.classeId);
+  const [inscrits, recharger] = useInscrits(choix.classeId);
+
+  async function supprimer(i) {
+    if (!confirm(`Supprimer ${nomComplet(i.eleves)} ?\nSon inscription et ses notes de l'année seront effacées.\n(Vous pourrez annuler, ou le restaurer depuis la Corbeille.)`)) return;
+    const err = await supprimerEleve(i.id);
+    if (err) return alert(err);
+    signalerSuppression(nomComplet(i.eleves));
+    recharger();
+  }
   const ecoles = useEcoles();
   const ecole = ecoles.find((e) => e.id === choix.ecoleId);
 
@@ -22,6 +32,7 @@ export default function CartesScolaires() {
       <div className="planche-cartes">
         {classe && inscrits.map((i) => (
           <div key={i.id} className="carte-scolaire">
+            {peutSupprimer && <button className="croix-carte non-imprime" title="Supprimer cet élève" onClick={() => supprimer(i)}>✕</button>}
             <div className="cs-tete">
               <div>RÉPUBLIQUE DE CÔTE D'IVOIRE<br /><small>MENA — {iepp?.nom}</small></div>
               <div className="cs-annee">{annee?.libelle}</div>

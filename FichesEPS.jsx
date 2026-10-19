@@ -4,12 +4,13 @@ import { supabase, traduireErreur } from './supabase';
 import { ChoixEcoleClasse, dateFr, nomComplet, useEcoles } from './Choix.jsx';
 import { useInscrits } from './Eleves.jsx';
 import { EnTeteOfficiel } from './Releves.jsx';
+import { signalerSuppression, supprimerEleve } from './Corbeille.jsx';
 
 export default function FichesEPS() {
   const { iepp, annee, role } = useApp();
   const [choix, setChoix] = useState({ ecoleId: null, classeId: null });
   const [classe, setClasse] = useState(null);
-  const [inscrits] = useInscrits(choix.classeId);
+  const [inscrits, recharger] = useInscrits(choix.classeId);
   const ecoles = useEcoles();
   const [fiches, setFiches] = useState({});
   const [msg, setMsg] = useState('');
@@ -24,6 +25,23 @@ export default function FichesEPS() {
       setFiches(f);
     });
   }, [inscrits]);
+
+  async function effacerFiche(i) {
+    const f = fiches[i.id];
+    if (!f?.id) return;
+    if (!confirm(`Supprimer la fiche EPS de ${nomComplet(i.eleves)} (aptitude, taille, poids) ?\n(Vous pourrez annuler, ou la restaurer depuis la Corbeille.)`)) return;
+    const { error } = await supabase.from('fiches_eps').delete().eq('id', f.id);
+    if (error) return setMsg(traduireErreur(error));
+    setFiches((x) => ({ ...x, [i.id]: { inscription_id: i.id, apte: true, taille_cm: null, poids_kg: null, motif_inaptitude: '', observations: '' } }));
+    signalerSuppression(`Fiche EPS de ${nomComplet(i.eleves)}`);
+  }
+  async function retirerEleve(i) {
+    if (!confirm(`Supprimer l'élève ${nomComplet(i.eleves)} ?\nSon inscription, ses notes et sa fiche EPS seront effacées.\n(Vous pourrez annuler, ou le restaurer depuis la Corbeille.)`)) return;
+    const err = await supprimerEleve(i.id);
+    if (err) return setMsg(err);
+    signalerSuppression(nomComplet(i.eleves));
+    recharger();
+  }
 
   const maj = (id, k, v) => setFiches((f) => ({ ...f, [id]: { ...f[id], [k]: v } }));
 
@@ -54,7 +72,7 @@ export default function FichesEPS() {
           </div>
           {msg && <p className="succes non-imprime">{msg}</p>}
           <table className="tableau doc">
-            <thead><tr><th>N°</th><th>Nom et prénoms</th><th>Sexe</th><th>Né(e) le</th><th>Apte</th><th>Taille (cm)</th><th>Poids (kg)</th><th>Motif d'inaptitude</th></tr></thead>
+            <thead><tr><th>N°</th><th>Nom et prénoms</th><th>Sexe</th><th>Né(e) le</th><th>Apte</th><th>Taille (cm)</th><th>Poids (kg)</th><th>Motif d'inaptitude</th>{modifiable && <th className="non-imprime"></th>}</tr></thead>
             <tbody>
               {inscrits.map((i, n) => {
                 const f = fiches[i.id];
@@ -69,6 +87,12 @@ export default function FichesEPS() {
                     <td><input className="petit" type="number" disabled={!modifiable} value={f.taille_cm ?? ''} onChange={(e) => maj(i.id, 'taille_cm', e.target.value)} /></td>
                     <td><input className="petit" type="number" disabled={!modifiable} value={f.poids_kg ?? ''} onChange={(e) => maj(i.id, 'poids_kg', e.target.value)} /></td>
                     <td><input disabled={!modifiable || f.apte} value={f.motif_inaptitude ?? ''} onChange={(e) => maj(i.id, 'motif_inaptitude', e.target.value)} /></td>
+                    {modifiable && (
+                      <td className="actions-ligne non-imprime">
+                        {f.id && <button className="lien danger" onClick={() => effacerFiche(i)}>Supprimer la fiche</button>}
+                        <button className="lien danger" onClick={() => retirerEleve(i)}>Supprimer l'élève</button>
+                      </td>
+                    )}
                   </tr>
                 );
               })}

@@ -4,6 +4,7 @@ import { supabase, traduireErreur } from './supabase';
 import { FormulaireModal } from './Crud.jsx';
 import Modal from './Modal.jsx';
 import { useListe } from './Choix.jsx';
+import { signalerSuppression } from './Corbeille.jsx';
 
 const MOTIFS = [
   'Compte suspendu pour non-paiement de l\'abonnement.',
@@ -107,9 +108,9 @@ export default function Comptes() {
   }
 
   async function supprimer(c) {
-    if (!confirm(`Supprimer définitivement le compte de ${c.nom_complet} ?`)) return;
+    if (!confirm(`Supprimer le compte de ${c.nom_complet} ?\n(Vous pourrez annuler, ou le restaurer depuis la Corbeille.)`)) return;
     const { error } = await supabase.rpc('supprimer_compte', { p_id: c.id });
-    if (error) setMsg(traduireErreur(error)); else charger();
+    if (error) setMsg(traduireErreur(error)); else { signalerSuppression(`Compte de ${c.nom_complet}`); charger(); }
   }
 
   const nomIepp = (id) => iepps.find((i) => i.id === id)?.nom || '';
