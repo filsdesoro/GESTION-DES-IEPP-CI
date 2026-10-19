@@ -93,7 +93,7 @@ export function AbonnementBloque() {
           <div className="tarif">
             <span>Abonnement annuel</span>
             <strong>{fcfa(config.montant, config.devise)}</strong>
-            <small>par circonscription, pour toute l'année scolaire</small>
+            <small>par circonscription, du {dateFr(debutAbonnement(annee, config))} au {dateFr(finAbonnement(annee, config))}</small>
           </div>
         )}
 
@@ -229,7 +229,7 @@ export default function Abonnements() {
 
   async function enregistrerTarif(e) {
     e.preventDefault();
-    const { error } = await supabase.from('config_abonnement').upsert({ id: 1, montant: Number(tarif.montant) || 0, devise: tarif.devise || 'FCFA', instructions: tarif.instructions || '', contact: tarif.contact || null, echeance_jour: Number(tarif.echeance_jour || 15), echeance_mois: Number(tarif.echeance_mois || 10), updated_at: new Date().toISOString() });
+    const { error } = await supabase.from('config_abonnement').upsert({ id: 1, montant: Number(tarif.montant) || 0, devise: tarif.devise || 'FCFA', instructions: tarif.instructions || '', contact: tarif.contact || null, echeance_jour: Number(tarif.echeance_jour || 10), echeance_mois: Number(tarif.echeance_mois || 10), updated_at: new Date().toISOString() });
     if (error) return setTarif({ ...tarif, erreur: traduireErreur(error) });
     setTarif(null);
     chargerConfig();
@@ -243,7 +243,7 @@ export default function Abonnements() {
         <h1>Abonnements {annee.libelle}</h1>
         <button className="btn-contour" disabled={!config} onClick={() => setTarif({ ...config })}>Tarif et instructions</button>
       </div>
-      {config && <p className="sous-titre">Tarif : <strong>{fcfa(config.montant, config.devise)}</strong> par circonscription et par année scolaire{config.contact ? ` — contact : ${config.contact}` : ''}. Les abonnements {annee.libelle} expirent le <strong>{dateFr(finAbonnement(annee, config))}</strong>{joursAvant(finAbonnement(annee, config)) >= 0 ? ` (dans ${joursAvant(finAbonnement(annee, config))} jours)` : ' (date dépassée)'}.</p>}
+      {config && <p className="sous-titre">Tarif : <strong>{fcfa(config.montant, config.devise)}</strong> par circonscription et par année scolaire{config.contact ? ` — contact : ${config.contact}` : ''}. Période d'abonnement {annee.libelle} : du <strong>{dateFr(debutAbonnement(annee, config))}</strong> au <strong>{dateFr(finAbonnement(annee, config))}</strong>{joursAvant(finAbonnement(annee, config)) >= 0 ? ` (fin dans ${joursAvant(finAbonnement(annee, config))} jours)` : ' (période terminée)'}.</p>}
 
       <div className="onglets">
         <button className={vue === 'iepp' ? 'actif' : ''} onClick={() => setVue('iepp')}>Circonscriptions</button>
@@ -337,17 +337,17 @@ export default function Abonnements() {
             <div className="grille-champs">
               <label><span>Montant annuel par IEPP</span><input type="number" min="0" value={tarif.montant} onChange={(e) => setTarif({ ...tarif, montant: e.target.value })} /></label>
               <label><span>Devise</span><input value={tarif.devise} onChange={(e) => setTarif({ ...tarif, devise: e.target.value })} /></label>
-              <label><span>Fin des abonnements : jour</span>
-                <select value={tarif.echeance_jour ?? 15} onChange={(e) => setTarif({ ...tarif, echeance_jour: Number(e.target.value) })}>
+              <label><span>Date anniversaire : jour</span>
+                <select value={tarif.echeance_jour ?? 10} onChange={(e) => setTarif({ ...tarif, echeance_jour: Number(e.target.value) })}>
                   {Array.from({ length: 31 }, (_, i) => i + 1).map((j) => <option key={j} value={j}>{j}</option>)}
                 </select>
               </label>
-              <label><span>Fin des abonnements : mois</span>
+              <label><span>Date anniversaire : mois</span>
                 <select value={tarif.echeance_mois ?? 10} onChange={(e) => setTarif({ ...tarif, echeance_mois: Number(e.target.value) })}>
                   {['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'].map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
                 </select>
               </label>
-              <p className="pleine discret" style={{ margin: 0 }}>Pour l'année {annee.libelle}, les abonnements prendront fin le <b>{dateFr(finAbonnement(annee, tarif))}</b>. Ensuite l'accès est bloqué jusqu'au renouvellement.</p>
+              <p className="pleine discret" style={{ margin: 0 }}>Pour l'année {annee.libelle}, l'abonnement court du <b>{dateFr(debutAbonnement(annee, tarif))}</b> au <b>{dateFr(finAbonnement(annee, tarif))}</b>. Ensuite l'accès est bloqué jusqu'au renouvellement.</p>
               <label className="pleine"><span>Numéro(s) de paiement / contact</span>
                 <input value={tarif.contact || ''} placeholder="ex. Orange Money 07 00 00 00 00 — Wave 05 00 00 00 00 (M. …)" onChange={(e) => setTarif({ ...tarif, contact: e.target.value })} />
               </label>
@@ -472,8 +472,14 @@ export function finAbonnement(annee, config) {
   const an = Number(annee.date_debut.slice(0, 4)) + 1;
   const mois = Number(config?.echeance_mois || 10);
   const dernier = new Date(an, mois, 0).getDate();
-  const jour = Math.min(Number(config?.echeance_jour || 15), dernier);
+  const jour = Math.min(Number(config?.echeance_jour || 10), dernier);
   return `${an}-${String(mois).padStart(2, '0')}-${String(jour).padStart(2, '0')}`;
+}
+
+/** Début de la période d'abonnement : même jour/mois, l'année de la rentrée. */
+export function debutAbonnement(annee, config) {
+  const fin = finAbonnement(annee, config);
+  return fin ? `${Number(fin.slice(0, 4)) - 1}${fin.slice(4)}` : null;
 }
 
 export function joursAvant(dateFin) {
