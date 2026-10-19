@@ -4,6 +4,7 @@ import { useApp } from './contexte.jsx';
 import { supabase, traduireErreur, uid } from './supabase';
 import { FormulaireModal } from './Crud.jsx';
 import { dateFr } from './Choix.jsx';
+import { signalerSuppression } from './Corbeille.jsx';
 
 const NIVEAUX = ['PS', 'MS', 'GS', 'CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'];
 const PRIMAIRE = ['CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2'];
@@ -185,9 +186,9 @@ export default function Compositions() {
   }
 
   async function supprimer(c) {
-    if (!confirm(`Supprimer « ${libelleComposition(c)} » et TOUTES ses notes ?`)) return;
+    if (!confirm(`Supprimer « ${libelleComposition(c)} » et TOUTES ses notes ?\n(Vous pourrez annuler, ou la restaurer depuis la Corbeille.)`)) return;
     const { error } = await supabase.from('compositions').delete().eq('id', c.id);
-    if (error) alert(traduireErreur(error));
+    if (error) alert(traduireErreur(error)); else signalerSuppression(libelleComposition(c));
     charger();
   }
 

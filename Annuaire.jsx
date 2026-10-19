@@ -4,6 +4,7 @@ import { useApp } from './contexte.jsx';
 import { supabase, traduireErreur } from './supabase';
 import { libelle } from './Formulaire.jsx';
 import { nomComplet, useEcoles, useListe } from './Choix.jsx';
+import { signalerSuppression } from './Corbeille.jsx';
 
 const FONCTIONS_DIRECTEUR = ['DIR_DECH', 'DIR_CLASSE'];
 const VUES = [['secteurs', 'Écoles par secteur'], ['classes', 'Classes par école'], ['enseignants', 'Enseignants']];
@@ -24,7 +25,35 @@ const somme = (lignes) => lignes.reduce((t, l) => ({
 }), { classes: 0, garcons: 0, filles: 0, effectif: 0 });
 
 export default function Annuaire() {
-  const { ieppId, iepp, annee, role } = useApp();
+  const { ieppId, iepp, annee, role, version } = useApp();
+  const [recharge, setRecharge] = useState(0);
+  // Qui peut supprimer quoi
+  const peutEcole = ['superviseur', 'iepp'].includes(role);
+  const peutClasse = ['superviseur', 'iepp', 'directeur', 'saisie'].includes(role);
+  const peutAgent = ['superviseur', 'iepp', 'conseiller'].includes(role);
+
+  async function supprimerEcole(l) {
+    if (!confirm(`Supprimer l'école « ${l.ecole.nom} » ?\n\nSes ${l.classes} classe(s) et ${l.effectif} élève(s) inscrits seront aussi supprimés.\n(Vous pourrez annuler, ou la restaurer depuis la Corbeille.)`)) return;
+    const { error } = await supabase.from('ecoles').delete().eq('id', l.ecole.id);
+    if (error) return alert(traduireErreur(error));
+    signalerSuppression(l.ecole.nom);
+    setRecharge((n) => n + 1);
+  }
+  async function supprimerClasse(c, ecole) {
+    if (!confirm(`Supprimer la classe « ${c.nom} » de ${ecole.nom} ?\n\nSes ${c.effectif} élève(s) inscrits et leurs notes seront aussi supprimés.\n(Vous pourrez annuler, ou la restaurer depuis la Corbeille.)`)) return;
+    const { error } = await supabase.from('classes').delete().eq('id', c.id);
+    if (error) return alert(traduireErreur(error));
+    signalerSuppression(`${c.nom} — ${ecole.nom}`);
+    setRecharge((n) => n + 1);
+  }
+  async function supprimerAgent(a) {
+    if (!confirm(`Supprimer ${nomComplet(a.personnel)} du personnel de ${annee.libelle} ?\n(Sa fiche est effacée sauf s'il a un compte ou une autre affectation.)\n\nVous pourrez annuler, ou le restaurer depuis la Corbeille.`)) return;
+    let { error } = await supabase.rpc('supprimer_agent', { p_affectation: a.id });
+    if (error && /function|schema cache/i.test(error.message)) ({ error } = await supabase.from('affectations').delete().eq('id', a.id));
+    if (error) return alert(traduireErreur(error));
+    signalerSuppression(nomComplet(a.personnel));
+    setRecharge((n) => n + 1);
+  }
   const ecolesVisibles = useEcoles();
   const secteurs = useListe('secteurs', { filtre: { iepp_id: ieppId }, ordre: 'nom' });
   const emplois = useListe('emplois');
@@ -56,7 +85,7 @@ export default function Annuaire() {
       }
     })();
     return () => { annule = true; };
-  }, [ieppId, annee]);
+  }, [ieppId, annee, recharge, version]);
 
   // Le directeur / l'agent de saisie / le conseiller ne voient que leurs écoles
   const idsVisibles = useMemo(() => new Set(ecolesVisibles.map((e) => e.id)), [ecolesVisibles]);
@@ -209,7 +238,7 @@ export default function Annuaire() {
         <section key={g.id} className="carte bloc-annuaire">
           <h2>{titreSecteur(g.nom)} — {g.lignes.length} école{g.lignes.length > 1 ? 's' : ''}</h2>
           <div className="tableau-cadre"><table className="tableau">
-            <thead><tr><th>École</th><th>Statut</th><th>Directeur</th><th>Contact</th><th className="nombre">Classes</th><th className="nombre">Garçons</th><th className="nombre">Filles</th><th className="nombre">Effectif</th></tr></thead>
+            <thead><tr><th>École</th><th>Statut</th><th>Directeur</th><th>Contact</th><th className="nombre">Classes</th><th className="nombre">Garçons</th><th className="nombre">Filles</th><th className="nombre">Effectif</th>{peutEcole && <th className="non-imprime"></th>}</tr></thead>
             <tbody>
               {g.lignes.map((l) => (
                 <tr key={l.ecole.id}>
@@ -218,9 +247,10 @@ export default function Annuaire() {
                   <td>{nomComplet(l.directeur) || '—'}</td>
                   <td>{l.directeur?.telephone || l.ecole.telephone || '—'}</td>
                   <td className="nombre">{l.classes}</td><td className="nombre">{l.garcons}</td><td className="nombre">{l.filles}</td><td className="nombre">{l.effectif}</td>
+                  {peutEcole && <td className="actions-ligne non-imprime"><button className="lien danger" onClick={() => supprimerEcole(l)}>Supprimer</button></td>}
                 </tr>
               ))}
-              <tr className="ligne-total"><td colSpan={4}>Total du secteur</td><td className="nombre">{g.total.classes}</td><td className="nombre">{g.total.garcons}</td><td className="nombre">{g.total.filles}</td><td className="nombre">{g.total.effectif}</td></tr>
+              <tr className="ligne-total"><td colSpan={4}>Total du secteur</td><td className="nombre">{g.total.classes}</td><td className="nombre">{g.total.garcons}</td><td className="nombre">{g.total.filles}</td><td className="nombre">{g.total.effectif}</td>{peutEcole && <td className="non-imprime"></td>}</tr>
             </tbody>
           </table></div>
         </section>
@@ -238,20 +268,22 @@ export default function Annuaire() {
 
       {vue === 'classes' && lignesEcoles.map((l) => (
         <section key={l.ecole.id} className="carte bloc-annuaire">
-          <h2>{l.ecole.nom} — {l.classes} classe{l.classes > 1 ? 's' : ''}</h2>
+          <h2>{l.ecole.nom} — {l.classes} classe{l.classes > 1 ? 's' : ''}
+            {peutEcole && <button className="lien danger non-imprime titre-action" onClick={() => supprimerEcole(l)}>Supprimer l'école</button>}</h2>
           <p className="discret">{nomSecteur(l.ecole.secteur_id)} · Directeur : {nomComplet(l.directeur) || '—'}</p>
           {l.classes_detail.length ? (
             <div className="tableau-cadre"><table className="tableau">
-              <thead><tr><th>Classe</th><th>Niveau</th><th>Maître</th><th className="nombre">Garçons</th><th className="nombre">Filles</th><th className="nombre">Effectif</th></tr></thead>
+              <thead><tr><th>Classe</th><th>Niveau</th><th>Maître</th><th className="nombre">Garçons</th><th className="nombre">Filles</th><th className="nombre">Effectif</th>{peutClasse && <th className="non-imprime"></th>}</tr></thead>
               <tbody>
                 {l.classes_detail.map((c) => (
                   <tr key={c.id}>
                     <td><strong>{c.nom}</strong>{c.multigrade && <span className="badge">multigrade</span>}</td>
                     <td>{c.niveau_code}</td><td>{nomComplet(c.maitre) || '—'}</td>
                     <td className="nombre">{c.garcons}</td><td className="nombre">{c.filles}</td><td className="nombre">{c.effectif}</td>
+                    {peutClasse && <td className="actions-ligne non-imprime"><button className="lien danger" onClick={() => supprimerClasse(c, l.ecole)}>Supprimer</button></td>}
                   </tr>
                 ))}
-                <tr className="ligne-total"><td colSpan={3}>Total de l'école</td><td className="nombre">{l.garcons}</td><td className="nombre">{l.filles}</td><td className="nombre">{l.effectif}</td></tr>
+                <tr className="ligne-total"><td colSpan={3}>Total de l'école</td><td className="nombre">{l.garcons}</td><td className="nombre">{l.filles}</td><td className="nombre">{l.effectif}</td>{peutClasse && <td className="non-imprime"></td>}</tr>
               </tbody>
             </table></div>
           ) : <p className="vide">Aucune classe enregistrée pour cette année.</p>}
@@ -263,13 +295,14 @@ export default function Annuaire() {
         <section key={g.id} className="carte bloc-annuaire">
           <h2>{g.nom} — {g.lignes.length} agent{g.lignes.length > 1 ? 's' : ''}</h2>
           <div className="tableau-cadre"><table className="tableau">
-            <thead><tr><th>N°</th><th>Nom et prénoms</th><th>Matricule</th><th>Sexe</th><th>Emploi</th><th>Fonction</th><th>Classe tenue</th><th>Téléphone</th></tr></thead>
+            <thead><tr><th>N°</th><th>Nom et prénoms</th><th>Matricule</th><th>Sexe</th><th>Emploi</th><th>Fonction</th><th>Classe tenue</th><th>Téléphone</th>{peutAgent && <th className="non-imprime"></th>}</tr></thead>
             <tbody>
               {g.lignes.map((a, i) => (
                 <tr key={a.id}>
                   <td>{i + 1}</td><td><strong>{nomComplet(a.personnel)}</strong></td><td>{a.personnel.matricule || '—'}</td>
                   <td>{a.personnel.sexe || '—'}</td><td>{emploi(a.personnel.emploi_code) || '—'}</td><td>{a.fonctions?.libelle || '—'}</td>
                   <td>{(calcul.classeTenue[a.personnel.id] || []).join(', ') || '—'}</td><td>{a.personnel.telephone || '—'}</td>
+                  {peutAgent && <td className="actions-ligne non-imprime"><button className="lien danger" onClick={() => supprimerAgent(a)}>Supprimer</button></td>}
                 </tr>
               ))}
             </tbody>

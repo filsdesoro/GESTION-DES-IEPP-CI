@@ -4,6 +4,7 @@ import { supabase, traduireErreur, uid } from './supabase';
 import { FormulaireModal } from './Crud.jsx';
 import { OPTIONS, libelle } from './Formulaire.jsx';
 import { ChoixEcoleClasse, dateFr, nomComplet, useListe } from './Choix.jsx';
+import { signalerSuppression } from './Corbeille.jsx';
 
 export const CHAMPS_ELEVE = [
   { nom: 'matricule', label: 'Matricule' },
@@ -62,10 +63,10 @@ export default function Eleves() {
   }
 
   async function retirer(i) {
-    if (!confirm(`Supprimer ${nomComplet(i.eleves)} ?\nSon inscription et ses notes de l'année seront effacées définitivement.`)) return;
+    if (!confirm(`Supprimer ${nomComplet(i.eleves)} ?\nSon inscription et ses notes de l'année seront effacées.\n(Vous pourrez annuler, ou le restaurer depuis la Corbeille.)`)) return;
     let { error } = await supabase.rpc('supprimer_eleve', { p_inscription: i.id });
     if (error && /function|schema cache/i.test(error.message)) ({ error } = await supabase.from('inscriptions').delete().eq('id', i.id)); // script 015 non lancé
-    if (error) alert(traduireErreur(error));
+    if (error) alert(traduireErreur(error)); else signalerSuppression(nomComplet(i.eleves));
     recharger();
   }
 

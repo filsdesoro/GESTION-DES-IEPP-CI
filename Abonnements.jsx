@@ -3,6 +3,7 @@ import { ROLES, useApp } from './contexte.jsx';
 import { supabase, traduireErreur } from './supabase';
 import Modal from './Modal.jsx';
 import { dateFr } from './Choix.jsx';
+import { signalerSuppression } from './Corbeille.jsx';
 
 export const MODES = [
   ['orange_money', 'Orange Money'],
@@ -205,13 +206,14 @@ export default function Abonnements() {
     .filter((l) => !t || `${l.iepp.nom} ${l.iepp.drena?.nom || ''}`.toLowerCase().includes(t));
 
   async function supprimerAbonnement(abo, nomIepp) {
-    if (!confirm(`Supprimer l'abonnement ${annee.libelle} de ${nomIepp} ?\n\nLa circonscription sera de nouveau bloquée et l'ID de paiement associé redeviendra disponible.`)) return;
+    if (!confirm(`Supprimer l'abonnement ${annee.libelle} de ${nomIepp} ?\n\nLa circonscription sera de nouveau bloquée et l'ID de paiement associé redeviendra disponible.\n(Vous pourrez annuler, ou le restaurer depuis la Corbeille.)`)) return;
     setMsg('');
     const { error } = await supabase.from('abonnements').delete().eq('id', abo.id);
     if (error) return setMsg(traduireErreur(error));
     // l'ID de paiement utilisé par cet abonnement redevient disponible
     await supabase.from('paiements_recus').update({ utilise_iepp: null, utilise_annee: null, utilise_le: null })
       .eq('utilise_iepp', abo.iepp_id).eq('utilise_annee', abo.annee_id);
+    signalerSuppression(`Abonnement ${annee.libelle} — ${nomIepp}`);
     charger();
   }
 
@@ -405,7 +407,7 @@ function IdsRecus({ config, iepps, apresAjout }) {
   async function supprimer(p) {
     if (!confirm(`Supprimer l'ID ${p.reference} ?`)) return;
     const { error } = await supabase.from('paiements_recus').delete().eq('id', p.id);
-    if (error) setMsg(traduireErreur(error)); else charger();
+    if (error) setMsg(traduireErreur(error)); else { signalerSuppression(`ID ${p.reference}`); charger(); }
   }
 
   const nomIepp = (id) => iepps.find((i) => i.id === id)?.nom || '—';

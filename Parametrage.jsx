@@ -4,6 +4,7 @@ import { supabase, traduireErreur, uid } from './supabase';
 import Champs from './Formulaire.jsx';
 import Crud from './Crud.jsx';
 import { useListe, dateFr } from './Choix.jsx';
+import { signalerSuppression } from './Corbeille.jsx';
 
 export default function Parametrage() {
   const { role } = useApp();
@@ -181,6 +182,7 @@ function Bareme() {
     }
     setSupprimees((x) => [...x, m.id]);
     setMsg(`Matière « ${m.libelle} » supprimée.`);
+    signalerSuppression(m.libelle);
   }
 
   async function enregistrer() {

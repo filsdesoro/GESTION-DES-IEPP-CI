@@ -4,6 +4,7 @@ import { ROLES, useApp } from './contexte.jsx';
 import { supabase, traduireErreur } from './supabase';
 import Modal from './Modal.jsx';
 import { BandeauAbonnement } from './Abonnements.jsx';
+import { BarreAnnuler } from './Corbeille.jsx';
 
 export default function Layout({ menu, children }) {
   const { profil, role, iepps, iepp, ieppId, setIeppId, annee, deconnexion, actualiser, version } = useApp();
@@ -63,6 +64,7 @@ export default function Layout({ menu, children }) {
           <div key={version}>{children}</div>
         </main>
       </div>
+      <BarreAnnuler />
       {mdp && <ChangerMotDePasse fermer={() => setMdp(false)} />}
     </div>
   );

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase, traduireErreur, uid } from './supabase';
 import Champs from './Formulaire.jsx';
 import Modal from './Modal.jsx';
+import { signalerSuppression } from './Corbeille.jsx';
 
 /**
  * Liste + formulaire générique sur une table.
@@ -67,10 +68,10 @@ export default function Crud({
   }
 
   async function supprimer(l) {
-    if (!confirm('Supprimer définitivement cet enregistrement ?')) return;
+    if (!confirm('Supprimer cet enregistrement ?\n(Vous pourrez annuler, ou le restaurer depuis la Corbeille.)')) return;
     const { error } = await supabase.from(table).delete().eq('id', l.id);
     if (error) alert(traduireErreur(error));
-    else charger();
+    else { signalerSuppression(l.nom || l.libelle || l.code || ''); charger(); }
   }
 
   return (

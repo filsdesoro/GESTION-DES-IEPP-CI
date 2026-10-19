@@ -4,6 +4,7 @@ import { supabase, traduireErreur, uid } from './supabase';
 import { FormulaireModal } from './Crud.jsx';
 import { OPTIONS, libelle } from './Formulaire.jsx';
 import { dateFr, nomComplet, useEcoles, useListe } from './Choix.jsx';
+import { signalerSuppression } from './Corbeille.jsx';
 
 const CHAMPS_PERSO = ['matricule', 'nom', 'prenoms', 'sexe', 'date_naissance', 'lieu_naissance', 'telephone', 'email', 'emploi_code', 'diplome_prof', 'diplome_acad', 'date_entree_fp', 'position'];
 const CHAMPS_AFF = ['ecole_id', 'fonction_code', 'date_prise_service', 'observations'];
@@ -72,10 +73,10 @@ export default function Personnel() {
   }
 
   async function retirer(l) {
-    if (!confirm(`Supprimer ${nomComplet(l.personnel)} du personnel de ${annee.libelle} ?\n(Sa fiche est effacée sauf s'il a un compte ou une autre affectation.)`)) return;
+    if (!confirm(`Supprimer ${nomComplet(l.personnel)} du personnel de ${annee.libelle} ?\n(Sa fiche est effacée sauf s'il a un compte ou une autre affectation.)\n\nVous pourrez annuler, ou le restaurer depuis la Corbeille.`)) return;
     let { error } = await supabase.rpc('supprimer_agent', { p_affectation: l.id });
     if (error && /function|schema cache/i.test(error.message)) ({ error } = await supabase.from('affectations').delete().eq('id', l.id)); // script 015 non lancé
-    if (error) alert(traduireErreur(error));
+    if (error) alert(traduireErreur(error)); else signalerSuppression(nomComplet(l.personnel));
     charger();
   }
 
