@@ -72,8 +72,9 @@ export default function Personnel() {
   }
 
   async function retirer(l) {
-    if (!confirm(`Retirer ${nomComplet(l.personnel)} de la circonscription pour ${annee.libelle} ? (sa fiche reste conservée)`)) return;
-    const { error } = await supabase.from('affectations').delete().eq('id', l.id);
+    if (!confirm(`Supprimer ${nomComplet(l.personnel)} du personnel de ${annee.libelle} ?\n(Sa fiche est effacée sauf s'il a un compte ou une autre affectation.)`)) return;
+    let { error } = await supabase.rpc('supprimer_agent', { p_affectation: l.id });
+    if (error && /function|schema cache/i.test(error.message)) ({ error } = await supabase.from('affectations').delete().eq('id', l.id)); // script 015 non lancé
     if (error) alert(traduireErreur(error));
     charger();
   }
@@ -138,7 +139,7 @@ export default function Personnel() {
                 <td>{libelle('position', l.personnel?.position)}</td>
                 <td className="actions-ligne non-imprime">
                   {peutGerer && <button className="lien" onClick={() => setEdition({ ...l.personnel, ...l, personnel_id: l.personnel_id, affectation_id: l.id })}>Modifier</button>}
-                  {peutGerer && <button className="lien danger" onClick={() => retirer(l)}>Retirer</button>}
+                  {peutGerer && <button className="lien danger" onClick={() => retirer(l)}>Supprimer</button>}
                 </td>
               </tr>
             ))}

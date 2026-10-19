@@ -62,8 +62,9 @@ export default function Eleves() {
   }
 
   async function retirer(i) {
-    if (!confirm(`Retirer ${nomComplet(i.eleves)} de la classe ? Ses notes de l'année seront supprimées.`)) return;
-    const { error } = await supabase.from('inscriptions').delete().eq('id', i.id);
+    if (!confirm(`Supprimer ${nomComplet(i.eleves)} ?\nSon inscription et ses notes de l'année seront effacées définitivement.`)) return;
+    let { error } = await supabase.rpc('supprimer_eleve', { p_inscription: i.id });
+    if (error && /function|schema cache/i.test(error.message)) ({ error } = await supabase.from('inscriptions').delete().eq('id', i.id)); // script 015 non lancé
     if (error) alert(traduireErreur(error));
     recharger();
   }
@@ -112,7 +113,7 @@ export default function Eleves() {
                     <td className="actions-ligne non-imprime">
                       {modifiable && <button className="lien" onClick={() => setEdition({ ...i.eleves, statut: i.statut, eleve_id: i.eleve_id, inscription_id: i.id })}>Modifier</button>}
                       {modifiable && <button className="lien" onClick={() => setTransfert(i)}>Changer de classe</button>}
-                      {modifiable && <button className="lien danger" onClick={() => retirer(i)}>Retirer</button>}
+                      {modifiable && <button className="lien danger" onClick={() => retirer(i)}>Supprimer</button>}
                     </td>
                   </tr>
                 ))}

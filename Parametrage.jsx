@@ -126,7 +126,8 @@ function codeMatiere(nom) {
 function Bareme() {
   const catalogue = useListe('matieres', { ordre: 'ordre' });
   const [ajoutees, setAjoutees] = useState([]);
-  const matieres = [...catalogue, ...ajoutees.filter((a) => !catalogue.some((m) => m.id === a.id))];
+  const [supprimees, setSupprimees] = useState([]);
+  const matieres = [...catalogue, ...ajoutees.filter((a) => !catalogue.some((m) => m.id === a.id))].filter((m) => !supprimees.includes(m.id));
   const [nouvelle, setNouvelle] = useState('');
   const [erreur, setErreur] = useState('');
   const niveaux = useListe('niveaux', { ordre: 'ordre' }).filter((n) => n.cycle === 'primaire');
@@ -169,6 +170,19 @@ function Bareme() {
     setMsg(`Matière « ${libelle} » ajoutée et cochée pour ${niveau}. Pensez à cliquer sur « Enregistrer ${niveau} ».`);
   }
 
+  async function supprimerMatiere(m) {
+    if (!confirm(`Supprimer la matière « ${m.libelle} » de la liste, pour tous les niveaux ?`)) return;
+    setErreur(''); setMsg('');
+    const { error } = await supabase.from('matieres').delete().eq('id', m.id);
+    if (error) {
+      return setErreur(/foreign key|utilisé ailleurs/i.test(error.message + traduireErreur(error))
+        ? `« ${m.libelle} » a déjà des notes enregistrées : elle ne peut pas être supprimée. Décochez-la simplement pour ce niveau.`
+        : traduireErreur(error));
+    }
+    setSupprimees((x) => [...x, m.id]);
+    setMsg(`Matière « ${m.libelle} » supprimée.`);
+  }
+
   async function enregistrer() {
     setMsg('');
     const garder = [];
@@ -204,7 +218,7 @@ function Bareme() {
         {niveaux.map((n) => <button key={n.code} className={niveau === n.code ? 'actif' : ''} onClick={() => setNiveau(n.code)}>{n.code}</button>)}
       </div>
       <table className="tableau">
-        <thead><tr><th>Évaluée</th><th>Matière</th><th>Note sur</th><th>Coefficient</th></tr></thead>
+        <thead><tr><th>Évaluée</th><th>Matière</th><th>Note sur</th><th>Coefficient</th><th /></tr></thead>
         <tbody>
           {matieres.map((m) => {
             const r = bareme[`${m.id}|${niveau}`];
@@ -215,6 +229,7 @@ function Bareme() {
                 <td>{m.libelle}</td>
                 <td><input className="petit" type="number" disabled={!actif} value={r?.note_sur ?? 10} onChange={(e) => maj(m.id, 'note_sur', e.target.value)} /></td>
                 <td><input className="petit" type="number" disabled={!actif} value={r?.coefficient ?? 1} onChange={(e) => maj(m.id, 'coefficient', e.target.value)} /></td>
+                <td className="actions-ligne"><button className="lien danger" onClick={() => supprimerMatiere(m)}>Supprimer</button></td>
               </tr>
             );
           })}

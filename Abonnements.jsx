@@ -204,6 +204,17 @@ export default function Abonnements() {
     .filter((l) => filtre === 'tous' || (filtre === 'non_paye' ? !l.abo : groupe(l.abo?.statut) === filtre))
     .filter((l) => !t || `${l.iepp.nom} ${l.iepp.drena?.nom || ''}`.toLowerCase().includes(t));
 
+  async function supprimerAbonnement(abo, nomIepp) {
+    if (!confirm(`Supprimer l'abonnement ${annee.libelle} de ${nomIepp} ?\n\nLa circonscription sera de nouveau bloquée et l'ID de paiement associé redeviendra disponible.`)) return;
+    setMsg('');
+    const { error } = await supabase.from('abonnements').delete().eq('id', abo.id);
+    if (error) return setMsg(traduireErreur(error));
+    // l'ID de paiement utilisé par cet abonnement redevient disponible
+    await supabase.from('paiements_recus').update({ utilise_iepp: null, utilise_annee: null, utilise_le: null })
+      .eq('utilise_iepp', abo.iepp_id).eq('utilise_annee', abo.annee_id);
+    charger();
+  }
+
   async function changerStatut(abo, statut, observations) {
     setMsg('');
     const { data: u } = await supabase.auth.getUser();
@@ -288,6 +299,7 @@ export default function Abonnements() {
                     {['valide', 'paye'].includes(abo?.statut) && <button className="lien" onClick={() => changerStatut(abo, 'en_attente')}>Suspendre</button>}
                     {!abo && <button className="btn-contour petit" onClick={() => setEdition({ iepp, montant: config?.montant || 0, mode: 'especes', reference: '', telephone: '', date_paiement: new Date().toISOString().slice(0, 10), observations: '' })}>Enregistrer un paiement</button>}
                     {abo && abo.statut !== 'en_attente' && <button className="lien" onClick={() => setEdition({ iepp, ...abo })}>Modifier</button>}
+                    {abo && <button className="lien danger" onClick={() => supprimerAbonnement(abo, iepp.nom)}>Supprimer</button>}
                   </td>
                 </tr>
               );
