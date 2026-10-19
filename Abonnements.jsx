@@ -85,7 +85,7 @@ export function AbonnementBloque() {
         <div className="marque"><span className="marque-icone">🎓</span><span>Gestion <b>IEPP</b></span></div>
         <h1>Abonnement {annee?.libelle}</h1>
         <p className="sous-titre">
-          <strong>{iepp?.nom || 'Votre circonscription'}</strong> n'a pas encore d'abonnement validé pour l'année scolaire {annee?.libelle}.
+          <strong>{iepp?.nom || 'Votre circonscription'}</strong> n'a pas d'abonnement en cours pour l'année scolaire {annee?.libelle}.
           L'accès au logiciel est suspendu jusqu'à la validation du paiement.
         </p>
 
@@ -123,7 +123,13 @@ export function AbonnementBloque() {
                 <div className="actions"><button className="btn" disabled={envoi}>{envoi ? 'Vérification…' : 'Accéder au logiciel'}</button></div>
               </form>
             )}
-            {etat && declaration.statut !== 'paye' && msg !== 'active' && (
+            {declaration?.statut === 'valide' && msg !== 'active' && (
+              <div className="etat-declaration rouge">
+                <strong>Abonnement expiré le {dateFr(finAbonnement(annee, config))}</strong>
+                <span>Votre abonnement {annee?.libelle} est arrivé à échéance. Réglez le renouvellement puis contactez le gestionnaire{config?.contact ? ` (${config.contact})` : ''} : il ouvrira la nouvelle période et vous pourrez saisir votre nouvel ID de paiement.</span>
+              </div>
+            )}
+            {etat && !['paye', 'valide'].includes(declaration.statut) && msg !== 'active' && (
               <div className={`etat-declaration ${etat[1]}`}>
                 <strong>{declaration.statut === 'en_attente' ? 'ID en attente de confirmation' : etat[0]}</strong>
                 {declaration.statut === 'en_attente' && <span>L'ID {declaration.reference} a bien été reçu, mais le gestionnaire n'a pas encore confirmé ce paiement. Le logiciel s'activera automatiquement dès sa confirmation : cliquez alors sur « Actualiser ».</span>}
@@ -223,7 +229,7 @@ export default function Abonnements() {
 
   async function enregistrerTarif(e) {
     e.preventDefault();
-    const { error } = await supabase.from('config_abonnement').upsert({ id: 1, montant: Number(tarif.montant) || 0, devise: tarif.devise || 'FCFA', instructions: tarif.instructions || '', contact: tarif.contact || null, updated_at: new Date().toISOString() });
+    const { error } = await supabase.from('config_abonnement').upsert({ id: 1, montant: Number(tarif.montant) || 0, devise: tarif.devise || 'FCFA', instructions: tarif.instructions || '', contact: tarif.contact || null, echeance_jour: Number(tarif.echeance_jour || 15), echeance_mois: Number(tarif.echeance_mois || 10), updated_at: new Date().toISOString() });
     if (error) return setTarif({ ...tarif, erreur: traduireErreur(error) });
     setTarif(null);
     chargerConfig();
@@ -237,7 +243,7 @@ export default function Abonnements() {
         <h1>Abonnements {annee.libelle}</h1>
         <button className="btn-contour" disabled={!config} onClick={() => setTarif({ ...config })}>Tarif et instructions</button>
       </div>
-      {config && <p className="sous-titre">Tarif : <strong>{fcfa(config.montant, config.devise)}</strong> par circonscription et par année scolaire{config.contact ? ` — contact : ${config.contact}` : ''}. Les abonnements {annee.libelle} expirent le <strong>{dateFr(annee.date_fin)}</strong>{joursAvant(annee.date_fin) >= 0 ? ` (dans ${joursAvant(annee.date_fin)} jours)` : ''}.</p>}
+      {config && <p className="sous-titre">Tarif : <strong>{fcfa(config.montant, config.devise)}</strong> par circonscription et par année scolaire{config.contact ? ` — contact : ${config.contact}` : ''}. Les abonnements {annee.libelle} expirent le <strong>{dateFr(finAbonnement(annee, config))}</strong>{joursAvant(finAbonnement(annee, config)) >= 0 ? ` (dans ${joursAvant(finAbonnement(annee, config))} jours)` : ' (date dépassée)'}.</p>}
 
       <div className="onglets">
         <button className={vue === 'iepp' ? 'actif' : ''} onClick={() => setVue('iepp')}>Circonscriptions</button>
@@ -331,6 +337,17 @@ export default function Abonnements() {
             <div className="grille-champs">
               <label><span>Montant annuel par IEPP</span><input type="number" min="0" value={tarif.montant} onChange={(e) => setTarif({ ...tarif, montant: e.target.value })} /></label>
               <label><span>Devise</span><input value={tarif.devise} onChange={(e) => setTarif({ ...tarif, devise: e.target.value })} /></label>
+              <label><span>Fin des abonnements : jour</span>
+                <select value={tarif.echeance_jour ?? 15} onChange={(e) => setTarif({ ...tarif, echeance_jour: Number(e.target.value) })}>
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map((j) => <option key={j} value={j}>{j}</option>)}
+                </select>
+              </label>
+              <label><span>Fin des abonnements : mois</span>
+                <select value={tarif.echeance_mois ?? 10} onChange={(e) => setTarif({ ...tarif, echeance_mois: Number(e.target.value) })}>
+                  {['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'].map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+                </select>
+              </label>
+              <p className="pleine discret" style={{ margin: 0 }}>Pour l'année {annee.libelle}, les abonnements prendront fin le <b>{dateFr(finAbonnement(annee, tarif))}</b>. Ensuite l'accès est bloqué jusqu'au renouvellement.</p>
               <label className="pleine"><span>Numéro(s) de paiement / contact</span>
                 <input value={tarif.contact || ''} placeholder="ex. Orange Money 07 00 00 00 00 — Wave 05 00 00 00 00 (M. …)" onChange={(e) => setTarif({ ...tarif, contact: e.target.value })} />
               </label>
@@ -449,6 +466,16 @@ function IdsRecus({ config, iepps, apresAjout }) {
 // =====================================================================
 export const SEUIL_ALERTE_JOURS = 30;
 
+/** Date de fin d'abonnement (AAAA-MM-JJ) : jour/mois réglés, l'année qui suit la rentrée. */
+export function finAbonnement(annee, config) {
+  if (!annee?.date_debut) return annee?.date_fin || null;
+  const an = Number(annee.date_debut.slice(0, 4)) + 1;
+  const mois = Number(config?.echeance_mois || 10);
+  const dernier = new Date(an, mois, 0).getDate();
+  const jour = Math.min(Number(config?.echeance_jour || 15), dernier);
+  return `${an}-${String(mois).padStart(2, '0')}-${String(jour).padStart(2, '0')}`;
+}
+
 export function joursAvant(dateFin) {
   if (!dateFin) return null;
   const fin = new Date(`${dateFin}T00:00:00`);
@@ -461,13 +488,14 @@ export function BandeauAbonnement() {
   const { role, annee, abonnementActif } = useApp();
   const [config] = useConfig();
   const [ouvert, setOuvert] = useState(false);
-  const jours = joursAvant(annee?.date_fin);
+  const fin = finAbonnement(annee, config);
+  const jours = config ? joursAvant(fin) : null;
   if (role === 'superviseur' || !abonnementActif || jours === null || jours < 0 || jours > SEUIL_ALERTE_JOURS) return null;
   const quand = jours === 0 ? "aujourd'hui" : jours === 1 ? 'demain' : `dans ${jours} jours`;
   return (
     <>
       <div className={`bandeau-abonnement ${jours <= 7 ? 'urgent' : ''}`}>
-        <span>⏳ <b>Votre abonnement expire {quand}</b> (le {dateFr(annee.date_fin)}), à la fin de l'année scolaire {annee.libelle}.</span>
+        <span>⏳ <b>Votre abonnement expire {quand}</b> (le {dateFr(fin)}) — abonnement {annee.libelle}.</span>
         <button className="btn petit" onClick={() => setOuvert(true)}>Renouveler</button>
       </div>
       {ouvert && (
