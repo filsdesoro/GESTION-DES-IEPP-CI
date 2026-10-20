@@ -6,10 +6,12 @@ import Modal from './Modal.jsx';
 import { BandeauAbonnement } from './Abonnements.jsx';
 import { BarreAnnuler } from './Corbeille.jsx';
 import RechercheGenerale from './Recherche.jsx';
+import { usePresence } from './Connexions.jsx';
 
 export default function Layout({ menu, children }) {
   const { profil, role, iepps, iepp, ieppId, setIeppId, annee, deconnexion, actualiser, version } = useApp();
   const [tourne, setTourne] = useState(false);
+  usePresence(!!profil?.id);
   async function toutActualiser() {
     setTourne(true);
     try { await actualiser(); } finally { setTimeout(() => setTourne(false), 600); }
@@ -52,6 +54,9 @@ export default function Layout({ menu, children }) {
       </header>
       <div className="corps">
         <nav className={`menu ${ouvert ? 'ouvert' : ''}`} onClick={() => setOuvert(false)}>
+          <button className="menu-recherche" onClick={() => window.dispatchEvent(new Event('gestion-iepp:recherche'))}>
+            <span aria-hidden="true">🔍</span> Rechercher un élève, un agent, une école…
+          </button>
           {menu.map((m) => (
             <NavLink key={m.chemin} to={m.chemin} end={m.chemin === '/'}
               className={({ isActive }) => (isActive || (m.chemin !== '/' && loc.pathname.startsWith(m.chemin)) ? 'actif' : '')}>

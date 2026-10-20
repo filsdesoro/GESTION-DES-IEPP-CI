@@ -431,8 +431,13 @@ input.champ-id { font-size: 17px; text-transform: uppercase; }
 .croix-carte:hover { background: #fdecea; }
 
 /* Recherche générale */
-.bouton-recherche { white-space: nowrap; }
-@media (max-width: 1500px) { .bouton-recherche .texte-recherche { display: none; } }
+.champ-recherche-entete { display: flex; align-items: center; gap: 8px; flex: 0 1 240px; min-width: 44px; height: 40px; padding: 0 14px;
+  border: 1px solid var(--bord); border-radius: 10px; background: #f4f8f6; color: var(--discret); font: inherit; cursor: text; white-space: nowrap; overflow: hidden; }
+.champ-recherche-entete:hover { border-color: var(--vert); }
+@media (max-width: 1200px) { .champ-recherche-entete .texte-recherche { display: none; } .champ-recherche-entete { flex: 0 0 auto; cursor: pointer; } }
+.menu-recherche { display: flex; align-items: center; gap: 8px; width: 100%; margin: 0 0 12px; padding: 11px 14px; border: 1px solid var(--bord);
+  border-radius: 10px; background: var(--blanc); color: var(--discret); font: inherit; font-size: 14px; text-align: left; cursor: pointer; }
+.menu-recherche:hover { border-color: var(--vert); color: var(--vert); }
 .recherche-fond { position: fixed; inset: 0; background: rgba(15, 30, 25, .35); z-index: 70; display: flex; justify-content: center; align-items: flex-start; padding: 9vh 16px 16px; }
 .recherche-fenetre { background: var(--blanc); width: 100%; max-width: 640px; border-radius: 14px; box-shadow: 0 20px 50px rgba(0,0,0,.25); overflow: hidden; display: flex; flex-direction: column; max-height: 78vh; }
 .recherche-saisie { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--bord); }
@@ -444,3 +449,16 @@ input.champ-id { font-size: 17px; text-transform: uppercase; }
 .recherche-item { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; text-align: left; background: none; border: 0; padding: 9px 18px; font: inherit; cursor: pointer; }
 .recherche-item span { font-size: 13px; color: var(--discret); }
 .recherche-item.actif { background: #e8f4ef; }
+
+/* Connexions */
+.cartes-connexions { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin: 14px 0 22px; }
+.stat-connexion { display: flex; flex-direction: column; gap: 4px; }
+.stat-connexion b { font-size: 30px; line-height: 1; }
+.stat-connexion span { color: var(--discret); font-size: 14px; }
+.vert-texte { color: var(--vert); }
+.grille-iepp-connexions { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.iepp-connexion { display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.iepp-connexion.allumee { border-color: #9fd6c2; background: #f3fbf7; }
+.iepp-connexion-tete { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+.point-etat { width: 10px; height: 10px; border-radius: 50%; background: #c4ccd4; flex-shrink: 0; }
+.point-etat.on { background: #1aa36f; box-shadow: 0 0 0 3px rgba(26,163,111,.18); }

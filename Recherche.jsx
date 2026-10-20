@@ -23,13 +23,15 @@ export default function RechercheGenerale({ menu }) {
     const touche = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setOuvert(true); }
     };
+    const ouvrir = () => setOuvert(true);
     window.addEventListener('keydown', touche);
-    return () => window.removeEventListener('keydown', touche);
+    window.addEventListener('gestion-iepp:recherche', ouvrir);
+    return () => { window.removeEventListener('keydown', touche); window.removeEventListener('gestion-iepp:recherche', ouvrir); };
   }, []);
   return (
     <>
-      <button className="btn-contour bouton-recherche" onClick={() => setOuvert(true)} title="Rechercher un élève, un agent, une école, un compte (Ctrl+K)">
-        <span aria-hidden="true">🔍</span> <span className="texte-recherche">Rechercher</span>
+      <button className="champ-recherche-entete" onClick={() => setOuvert(true)} title="Rechercher un élève, un agent, une école, un compte (Ctrl+K)">
+        <span aria-hidden="true">🔍</span> <span className="texte-recherche">Rechercher…</span>
       </button>
       {ouvert && <FenetreRecherche menu={menu} fermer={() => setOuvert(false)} />}
     </>

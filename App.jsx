@@ -25,6 +25,7 @@ import Importer from './Importer.jsx';
 import Comptes from './Comptes.jsx';
 import Abonnements, { AbonnementBloque } from './Abonnements.jsx';
 import Corbeille from './Corbeille.jsx';
+import Connexions from './Connexions.jsx';
 
 const TOUS = ['superviseur', 'iepp', 'conseiller', 'directeur', 'saisie'];
 const GESTION = ['superviseur', 'iepp'];
@@ -49,6 +50,7 @@ export const MENU = [
   { chemin: '/cepe', titre: 'Convocations CEPE', roles: TOUS, el: <CEPE /> },
   { chemin: '/importer', titre: 'Importer', roles: ['superviseur', 'iepp', 'directeur', 'saisie'], el: <Importer /> },
   { chemin: '/comptes', titre: 'Comptes utilisateurs', roles: GESTION, el: <Comptes /> },
+  { chemin: '/connexions', titre: '🟢 Connexions', roles: GESTION, el: <Connexions /> },
   { chemin: '/abonnements', titre: 'Abonnements', roles: ['superviseur'], el: <Abonnements /> },
   { chemin: '/corbeille', titre: '🗑 Corbeille', roles: TOUS, el: <Corbeille /> },
 ];
