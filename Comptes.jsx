@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { ROLES, useApp } from './contexte.jsx';
 import { supabase, traduireErreur } from './supabase';
 import { FormulaireModal } from './Crud.jsx';
@@ -21,6 +22,7 @@ function motDePasseProvisoire() {
 
 export default function Comptes() {
   const { role, ieppId, iepps, profil } = useApp();
+  const [recherche, setRecherche] = useState(useLocation().state?.recherche || '');
   const [comptes, setComptes] = useState([]);
   const [emails, setEmails] = useState({});
   const [edition, setEdition] = useState(null);
@@ -126,6 +128,7 @@ export default function Comptes() {
         <div className="alerte">{comptes.filter((c) => !c.actif && /attente de validation/i.test(c.motif_blocage || '')).length} compte(s) créé(s) depuis la page de connexion attendent votre validation : vérifiez la personne puis cliquez sur « Valider ».</div>
       )}
       <div className="barre-outils">
+        <input className="recherche" placeholder="Rechercher un compte (nom, email, téléphone, matricule, rôle)…" value={recherche} onChange={(e) => setRecherche(e.target.value)} />
         <span className="discret">{comptes.length} compte(s)</span>
         <div className="espace" />
         <button className="btn" onClick={() => setEdition({ role: rolesPermis[rolesPermis.length - 2] || 'directeur', iepp_id: ieppId, mot_de_passe: motDePasseProvisoire() })}>+ Créer un compte</button>
@@ -135,7 +138,10 @@ export default function Comptes() {
         <table className="tableau">
           <thead><tr><th>Nom</th><th>Email</th><th>Rôle</th><th>Périmètre</th><th>État</th><th /></tr></thead>
           <tbody>
-            {comptes.map((c) => (
+            {comptes.filter((c) => {
+              const t = recherche.trim().toLowerCase();
+              return !t || `${c.nom_complet} ${emails[c.id] || ''} ${c.telephone || ''} ${ROLES[c.role] || ''}`.toLowerCase().includes(t);
+            }).map((c) => (
               <tr key={c.id}>
                 <td><b>{c.nom_complet}</b></td>
                 <td>{emails[c.id]?.endsWith('@tel.gestion-iepp.ci') ? <>Tél. {emails[c.id].split('@')[0]}</> : emails[c.id]?.endsWith('@mat.gestion-iepp.ci') ? <>Matricule {emails[c.id].split('@')[0].toUpperCase()}</> : emails[c.id] || <span className="discret">—</span>}{c.telephone && !emails[c.id]?.startsWith(c.telephone.replace(/[^0-9]/g, '')) && <div className="discret">Tél. {c.telephone}</div>}</td>

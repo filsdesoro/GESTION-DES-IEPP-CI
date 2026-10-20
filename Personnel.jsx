@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useApp } from './contexte.jsx';
+import { useLocation } from 'react-router-dom';
 import { supabase, traduireErreur, uid } from './supabase';
 import { FormulaireModal } from './Crud.jsx';
 import { OPTIONS, libelle } from './Formulaire.jsx';
@@ -16,7 +17,7 @@ export default function Personnel() {
   const fonctions = useListe('fonctions', { ordre: 'libelle' });
   const [lignes, setLignes] = useState([]);
   const [edition, setEdition] = useState(null);
-  const [recherche, setRecherche] = useState('');
+  const [recherche, setRecherche] = useState(useLocation().state?.recherche || '');
   const [filtreEcole, setFiltreEcole] = useState('');
   const [msg, setMsg] = useState('');
 

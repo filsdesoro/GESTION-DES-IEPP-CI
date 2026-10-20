@@ -5,6 +5,7 @@ import { supabase, traduireErreur } from './supabase';
 import Modal from './Modal.jsx';
 import { BandeauAbonnement } from './Abonnements.jsx';
 import { BarreAnnuler } from './Corbeille.jsx';
+import RechercheGenerale from './Recherche.jsx';
 
 export default function Layout({ menu, children }) {
   const { profil, role, iepps, iepp, ieppId, setIeppId, annee, deconnexion, actualiser, version } = useApp();
@@ -42,6 +43,7 @@ export default function Layout({ menu, children }) {
             <span>{ROLES[role]}</span>
           </div>
         </div>
+        <RechercheGenerale menu={menu} />
         <button className={`btn-contour actualiser ${tourne ? 'tourne' : ''}`} onClick={toutActualiser} title="Recharger toutes les données affichées" disabled={tourne}>
           <span className="icone-actu" aria-hidden="true">⟳</span> Actualiser
         </button>
@@ -61,7 +63,7 @@ export default function Layout({ menu, children }) {
           {!annee && (
             <div className="alerte">Aucune année scolaire active. {role === 'superviseur' ? 'Créez-la dans Paramétrage circonscription.' : 'Le superviseur doit en activer une.'}</div>
           )}
-          <div key={version}>{children}</div>
+          <div key={`${version}-${loc.state ? loc.key : ''}`}>{children}</div>
         </main>
       </div>
       <BarreAnnuler />

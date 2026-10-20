@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useApp } from './contexte.jsx';
+import { supabase as sbChoix } from './supabase';
+import { useLocation } from 'react-router-dom';
 import { ChoixEcoleClasse, dateFr, nomComplet, useEcoles } from './Choix.jsx';
 import { useInscrits } from './Eleves.jsx';
 import { signalerSuppression, supprimerEleve } from './Corbeille.jsx';
@@ -7,8 +9,13 @@ import { signalerSuppression, supprimerEleve } from './Corbeille.jsx';
 export default function CartesScolaires() {
   const { iepp, annee, role } = useApp();
   const peutSupprimer = role !== 'conseiller';
-  const [choix, setChoix] = useState({ ecoleId: null, classeId: null });
+  const depuis = useLocation().state;
+  const [choix, setChoix] = useState(depuis?.choix || { ecoleId: null, classeId: null });
   const [classe, setClasse] = useState(null);
+  // Ouvert depuis la recherche générale : on charge la classe choisie
+  useEffect(() => {
+    if (choix.classeId && !classe) sbChoix.from('classes').select('id, nom, niveau_code, ecole_id, maitre_id').eq('id', choix.classeId).single().then(({ data }) => data && setClasse(data));
+  }, [choix.classeId]); // eslint-disable-line react-hooks/exhaustive-deps
   const [inscrits, recharger] = useInscrits(choix.classeId);
 
   async function supprimer(i) {

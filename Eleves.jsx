@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useApp } from './contexte.jsx';
+import { useLocation } from 'react-router-dom';
 import { supabase, traduireErreur, uid } from './supabase';
 import { FormulaireModal } from './Crud.jsx';
 import { OPTIONS, libelle } from './Formulaire.jsx';
@@ -36,12 +37,13 @@ export function useInscrits(classeId) {
 
 export default function Eleves() {
   const { annee, role } = useApp();
-  const [choix, setChoix] = useState({ ecoleId: null, classeId: null });
+  const depuis = useLocation().state;
+  const [choix, setChoix] = useState(depuis?.choix || { ecoleId: null, classeId: null });
   const [inscrits, recharger] = useInscrits(choix.classeId);
   const classes = useListe('classes', { select: 'id, nom', filtre: { ecole_id: choix.ecoleId, annee_id: annee?.id || null }, ordre: 'nom' });
   const [edition, setEdition] = useState(null);
   const [transfert, setTransfert] = useState(null);
-  const [recherche, setRecherche] = useState('');
+  const [recherche, setRecherche] = useState(depuis?.recherche || '');
   const modifiable = role !== 'conseiller';
 
   async function enregistrer(v) {
