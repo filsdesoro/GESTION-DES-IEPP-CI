@@ -81,6 +81,7 @@ function Annees() {
         { cle: 'date_debut', label: 'Début', rendu: (l) => dateFr(l.date_debut) },
         { cle: 'date_fin', label: 'Fin', rendu: (l) => dateFr(l.date_fin) },
         { cle: 'active', label: 'État', rendu: (l) => (l.active ? <span className="badge vert">Active</span> : '') },
+        { cle: 'experimentation', label: 'Type', rendu: (l) => (l.experimentation ? <span className="badge orange">🧪 Expérimentation (gratuite)</span> : 'Payante (automatique)') },
       ]}
       actionsLigne={(l) => !l.active && <button className="lien" onClick={() => activer(l)}>Activer</button>}
     />

@@ -179,9 +179,19 @@ export function AbonnementBloque() {
 //  Page du superviseur : tarif + suivi et validation des abonnements
 // =====================================================================
 export default function Abonnements() {
-  const { iepps, annee } = useApp();
+  const { iepps, annee, actualiser } = useApp();
   const [config, chargerConfig] = useConfig();
   const [abos, setAbos] = useState([]);
+
+  async function basculerExperimentation() {
+    const v = !annee.experimentation;
+    if (!confirm(v
+      ? `Faire de ${annee.libelle} une année d'expérimentation ?\n\nToutes les circonscriptions auront accès GRATUITEMENT au logiciel, sans abonnement.`
+      : `Arrêter l'année d'expérimentation ${annee.libelle} ?\n\nLes circonscriptions sans abonnement validé seront aussitôt BLOQUÉES et devront payer.`)) return;
+    const { error } = await supabase.from('annees_scolaires').update({ experimentation: v }).eq('id', annee.id);
+    if (error) return setMsg(/experimentation/i.test(error.message) ? 'Lancez d’abord le script 019_annee_experimentation.sql dans Supabase.' : traduireErreur(error));
+    await actualiser();
+  }
   const [filtre, setFiltre] = useState('en_attente');
   const [recherche, setRecherche] = useState('');
   const [edition, setEdition] = useState(null);
@@ -255,6 +265,21 @@ export default function Abonnements() {
       <div className="titre-ligne">
         <h1>Abonnements {annee.libelle}</h1>
         <button className="btn-contour" disabled={!config} onClick={() => setTarif({ ...config })}>Tarif et instructions</button>
+      </div>
+      <div className={`carte experimentation ${annee.experimentation ? 'active' : ''}`}>
+        <div>
+          <strong>{annee.experimentation
+            ? `🧪 Année d'expérimentation ${annee.libelle} : accès gratuit pour toutes les circonscriptions jusqu'au ${dateFr(finGratuite(annee))}`
+            : `💳 Année ${annee.libelle} : version payante`}</strong>
+          <div className="discret">{annee.experimentation
+            ? 'Aucun abonnement n’est demandé cette année. Après cette date, la version payante démarre automatiquement : chaque circonscription devra s’abonner pour l’année scolaire suivante.'
+            : 'Les circonscriptions doivent avoir un abonnement validé pour utiliser le logiciel. Toutes les années après 2026-2027 sont payantes automatiquement.'}</div>
+        </div>
+        {(annee.experimentation || annee.date_debut < '2027-07-01') && (
+          <button className={annee.experimentation ? 'btn-contour' : 'btn'} onClick={basculerExperimentation}>
+            {annee.experimentation ? 'Arrêter l’expérimentation maintenant' : 'Remettre l’expérimentation'}
+          </button>
+        )}
       </div>
       {config && <p className="sous-titre">Tarif : <strong>{fcfa(config.montant, config.devise)}</strong> par circonscription et par année scolaire{config.contact ? ` — contact : ${config.contact}` : ''}. Abonnement possible à tout moment de l'année {annee.libelle}, valable jusqu'au <strong>{dateFr(finAbonnement(annee, config))}</strong>{joursAvant(finAbonnement(annee, config)) >= 0 ? ` (fin dans ${joursAvant(finAbonnement(annee, config))} jours)` : ' (période terminée)'}.</p>}
 
@@ -473,6 +498,11 @@ function IdsRecus({ config, iepps, apresAjout }) {
 // =====================================================================
 export const SEUIL_ALERTE_JOURS = 30;
 
+/** Fin de la période gratuite : fin de l'année d'expérimentation + 1 mois. */
+export function finGratuite(annee) {
+  return finAbonnement(annee, null);
+}
+
 /** Fin de l'abonnement : date précise du gestionnaire si renseignée, sinon fin de l'année scolaire + 1 mois. */
 export function finAbonnement(annee, config) {
   if (config?.date_fin) return config.date_fin;
@@ -491,12 +521,31 @@ export function joursAvant(dateFin) {
   return Math.round((fin - auj) / 86400000);
 }
 
+function BandeauExperimentation({ annee }) {
+  const cle = `bandeau-experimentation-${annee.id}`;
+  const [masque, setMasque] = useState(() => { try { return sessionStorage.getItem(cle) === '1'; } catch { return false; } });
+  const fin = finGratuite(annee);
+  const jours = joursAvant(fin);
+  if (jours !== null && jours < 0) return null;
+  const bientot = jours !== null && jours <= SEUIL_ALERTE_JOURS;
+  if (masque && !bientot) return null;
+  return (
+    <div className={`bandeau-abonnement ${bientot ? '' : 'experimentation'}`}>
+      {bientot
+        ? <span>⏳ <b>La période gratuite se termine {jours === 0 ? "aujourd'hui" : `dans ${jours} jour${jours > 1 ? 's' : ''}`}</b> (le {dateFr(fin)}). Ensuite, la version payante démarre : l'inspecteur devra abonner la circonscription pour la nouvelle année scolaire.</span>
+        : <span>🧪 <b>Année d'expérimentation {annee.libelle}</b> — le logiciel est <b>gratuit</b> pour toutes les circonscriptions jusqu'au {dateFr(fin)}. Merci de nous signaler vos remarques.</span>}
+      <button className="fermer-barre" aria-label="Masquer" onClick={() => { setMasque(true); try { sessionStorage.setItem(cle, '1'); } catch { /* */ } }}>×</button>
+    </div>
+  );
+}
+
 export function BandeauAbonnement() {
   const { role, annee, abonnementActif } = useApp();
   const [config] = useConfig();
   const [ouvert, setOuvert] = useState(false);
   const fin = finAbonnement(annee, config);
   const jours = config ? joursAvant(fin) : null;
+  if (annee?.experimentation) return <BandeauExperimentation annee={annee} />;
   if (role === 'superviseur' || !abonnementActif || jours === null || jours < 0 || jours > SEUIL_ALERTE_JOURS) return null;
   const quand = jours === 0 ? "aujourd'hui" : jours === 1 ? 'demain' : `dans ${jours} jours`;
   return (

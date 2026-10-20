@@ -462,3 +462,9 @@ input.champ-id { font-size: 17px; text-transform: uppercase; }
 .iepp-connexion-tete { display: flex; align-items: center; gap: 8px; font-size: 15px; }
 .point-etat { width: 10px; height: 10px; border-radius: 50%; background: #c4ccd4; flex-shrink: 0; }
 .point-etat.on { background: #1aa36f; box-shadow: 0 0 0 3px rgba(26,163,111,.18); }
+
+/* Année d'expérimentation */
+.bandeau-abonnement.experimentation { background: #eef6ff; color: #1d3f6e; border-bottom-color: #c9dcf5; }
+.bandeau-abonnement.experimentation .fermer-barre { color: #1d3f6e; background: none; border: 0; font-size: 20px; cursor: pointer; }
+.carte.experimentation { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 6px 0 14px; }
+.carte.experimentation.active { background: #eef6ff; border-color: #c9dcf5; }
