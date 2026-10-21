@@ -7,11 +7,15 @@ import { BandeauAbonnement } from './Abonnements.jsx';
 import { BarreAnnuler } from './Corbeille.jsx';
 import RechercheGenerale from './Recherche.jsx';
 import { usePresence } from './Connexions.jsx';
+import { useNonLus } from './Messagerie.jsx';
+import { useNouveautesForum } from './Forum.jsx';
 
 export default function Layout({ menu, children }) {
   const { profil, role, iepps, iepp, ieppId, setIeppId, annee, deconnexion, actualiser, version } = useApp();
   const [tourne, setTourne] = useState(false);
   usePresence(!!profil?.id);
+  const nouveautesForum = useNouveautesForum(!!profil?.id && menu.some((m) => m.chemin === '/forum'));
+  const nonLus = useNonLus(!!profil?.id && menu.some((m) => m.chemin === '/messagerie'));
   async function toutActualiser() {
     setTourne(true);
     try { await actualiser(); } finally { setTimeout(() => setTourne(false), 600); }
@@ -24,7 +28,7 @@ export default function Layout({ menu, children }) {
     <div className="appli">
       <BandeauAbonnement />
       <header className="entete">
-        <button className="burger" aria-label="Menu" onClick={() => setOuvert(!ouvert)}>☰</button>
+        <button className="burger" aria-label="Menu" onClick={() => setOuvert(!ouvert)}>☰{(nonLus > 0 || nouveautesForum > 0) && <span className="pastille-burger" />}</button>
         <div className="marque">
           <span className="marque-icone">🎓</span>
           <span>Gestion <b>IEPP</b></span>
@@ -61,6 +65,8 @@ export default function Layout({ menu, children }) {
             <NavLink key={m.chemin} to={m.chemin} end={m.chemin === '/'}
               className={({ isActive }) => (isActive || (m.chemin !== '/' && loc.pathname.startsWith(m.chemin)) ? 'actif' : '')}>
               {m.titre}
+              {m.chemin === '/messagerie' && nonLus > 0 && <span className="compteur-menu">{nonLus}</span>}
+              {m.chemin === '/forum' && nouveautesForum > 0 && <span className="compteur-menu vert" title="Sujets avec du nouveau">{nouveautesForum}</span>}
             </NavLink>
           ))}
         </nav>

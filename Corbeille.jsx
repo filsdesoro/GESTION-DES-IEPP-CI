@@ -12,7 +12,7 @@ const NOMS = {
   ecoles: 'École', classes: 'Classe', secteurs: 'Secteur', compositions: 'Composition', matieres: 'Matière',
   abonnements: 'Abonnement', paiements_recus: 'ID de paiement', annees_scolaires: 'Année scolaire',
   drena: 'DRENA', iepp: 'Circonscription', cepe_centres: 'Centre CEPE', fiches_eps: 'Fiche EPS', emplois: 'Emploi',
-  cepe_candidats: 'Candidat CEPE', profils: 'Compte utilisateur', 'auth.users': 'Compte utilisateur',
+  cepe_candidats: 'Candidat CEPE', forum_sujets: 'Sujet du forum', forum_reponses: 'Réponse du forum', profils: 'Compte utilisateur', 'auth.users': 'Compte utilisateur',
 };
 
 function messageErreur(e) {

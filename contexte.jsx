@@ -15,7 +15,7 @@ export const ROLES = {
 
 /** Comptes rattachés à une seule école. */
 export const ROLES_ECOLE = ['directeur', 'saisie', 'enseignant'];
-export const RUBRIQUES_ENSEIGNANT = ['/compositions', '/releves', '/eleves', '/suivi-saisie', '/cartes'];
+export const RUBRIQUES_ENSEIGNANT = ['/messagerie', '/forum', '/compositions', '/releves', '/eleves', '/suivi-saisie', '/cartes'];
 
 export function AppProvider({ children }) {
   const [session, setSession] = useState(null);

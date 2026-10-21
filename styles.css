@@ -468,3 +468,63 @@ input.champ-id { font-size: 17px; text-transform: uppercase; }
 .bandeau-abonnement.experimentation .fermer-barre { color: #1d3f6e; background: none; border: 0; font-size: 20px; cursor: pointer; }
 .carte.experimentation { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 6px 0 14px; }
 .carte.experimentation.active { background: #eef6ff; border-color: #c9dcf5; }
+
+/* Messagerie */
+.compteur-menu { display: inline-block; margin-left: 8px; min-width: 22px; padding: 1px 7px; border-radius: 11px; background: #d93025; color: #fff; font-size: 12px; font-weight: 800; text-align: center; }
+.burger { position: relative; }
+.pastille-burger { position: absolute; top: 4px; right: 4px; width: 9px; height: 9px; border-radius: 50%; background: #d93025; }
+.liste-messages { padding: 0; overflow: hidden; }
+.ligne-message { display: grid; grid-template-columns: 220px 1fr auto; gap: 14px; align-items: center; width: 100%; padding: 13px 18px; background: none; border: 0; border-bottom: 1px solid var(--bord); font: inherit; text-align: left; cursor: pointer; color: inherit; }
+.ligne-message:hover { background: #f4f8f6; }
+.ligne-message.non-lu { background: #f1f8f5; }
+.ligne-message.non-lu .lm-qui { font-weight: 800; }
+.lm-qui { display: flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lm-objet { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lm-date { color: var(--discret); font-size: 13px; white-space: nowrap; }
+.point-non-lu { width: 9px; height: 9px; border-radius: 50%; background: var(--vert); flex-shrink: 0; }
+@media (max-width: 900px) { .ligne-message { grid-template-columns: 1fr auto; } .lm-objet { grid-column: 1 / -1; grid-row: 2; } }
+.lecture-message h2 { margin: 10px 0 6px; }
+.entete-message { display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; }
+.entete-message .badge { margin: 2px 6px 2px 0; }
+.corps-message { white-space: pre-wrap; line-height: 1.6; padding: 16px 0; border-top: 1px solid var(--bord); }
+.contact-rapide { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 14px; border-top: 1px dashed var(--bord); }
+.contact-rapide p { width: 100%; margin: 0; }
+.contact-rapide a { text-decoration: none; }
+.redaction { display: flex; flex-direction: column; gap: 12px; }
+.redaction label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
+.redaction textarea, .redaction input:not([type=checkbox]) { font: inherit; }
+.champ-dest { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 10px 12px; border: 1px solid var(--bord); border-radius: 10px; min-height: 46px; }
+.champ-dest .libelle { font-weight: 700; margin-right: 4px; }
+.badge.puce { display: inline-flex; align-items: center; gap: 4px; }
+.badge.puce button { background: none; border: 0; cursor: pointer; font-size: 15px; line-height: 1; padding: 0 2px; color: inherit; }
+.groupes-dest { display: flex; flex-wrap: wrap; gap: 6px; }
+.btn-contour.petit { padding: 6px 12px; font-size: 13px; }
+.btn-contour.actif { background: var(--vert-clair, #e3f2ec); border-color: var(--vert); }
+.carnet summary { cursor: pointer; font-weight: 600; margin-bottom: 8px; }
+.liste-carnet { max-height: 280px; overflow-y: auto; border: 1px solid var(--bord); border-radius: 10px; padding: 6px 10px; margin-top: 8px; }
+.liste-carnet .case { display: flex; gap: 8px; align-items: flex-start; padding: 6px 0; font-weight: 400; flex-direction: row; }
+.envoi-ok h2 { color: var(--vert); margin-top: 0; }
+
+/* Forum */
+.compteur-menu.vert { background: var(--vert); }
+.liste-sujets { padding: 0; overflow: hidden; }
+.ligne-sujet { display: grid; grid-template-columns: 1fr auto 150px; gap: 14px; align-items: center; width: 100%; padding: 14px 18px; background: none; border: 0; border-bottom: 1px solid var(--bord); font: inherit; text-align: left; cursor: pointer; color: inherit; }
+.ligne-sujet:hover { background: #f4f8f6; }
+.ligne-sujet.nouveau { background: #f1f8f5; }
+.ligne-sujet .badge.vert { margin-left: 8px; font-size: 11px; }
+.ls-titre { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 4px; }
+.ls-auteur { width: 100%; font-size: 13px; }
+.ls-chiffres { display: flex; flex-direction: column; text-align: right; font-size: 13px; }
+@media (max-width: 900px) { .ligne-sujet { grid-template-columns: 1fr auto; } .ligne-sujet > .badge { display: none; } }
+.titre-sujet { margin: 6px 0 14px; }
+.titre-sujet .badge { font-size: 12px; vertical-align: middle; }
+.message-forum { background: var(--blanc); border: 1px solid var(--bord); border-radius: 12px; padding: 14px 18px; margin-bottom: 10px; }
+.message-forum.principal { border-color: #9fd6c2; }
+.message-forum.edition { display: flex; flex-direction: column; gap: 8px; }
+.message-forum.edition input, .message-forum.edition textarea, .message-forum.edition select { font: inherit; }
+.mf-entete { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.mf-date { margin-left: auto; font-size: 13px; }
+.avatar.petit { width: 30px; height: 30px; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; }
+.mf-corps { white-space: pre-wrap; line-height: 1.6; }
+.mf-actions { display: flex; gap: 6px; justify-content: flex-end; margin-top: 6px; }
+.nb-reponses { margin: 18px 0 10px; font-size: 16px; color: var(--discret); }

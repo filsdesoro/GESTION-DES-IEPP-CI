@@ -26,6 +26,8 @@ import Comptes from './Comptes.jsx';
 import Abonnements, { AbonnementBloque } from './Abonnements.jsx';
 import Corbeille from './Corbeille.jsx';
 import Connexions from './Connexions.jsx';
+import Messagerie from './Messagerie.jsx';
+import Forum from './Forum.jsx';
 
 const TOUS = ['superviseur', 'iepp', 'conseiller', 'directeur', 'saisie'];
 const GESTION = ['superviseur', 'iepp'];
@@ -33,6 +35,8 @@ const CIRC = ['superviseur', 'iepp', 'conseiller'];
 
 export const MENU = [
   { chemin: '/', titre: 'Tableau de bord', roles: TOUS, el: <TableauBord /> },
+  { chemin: '/messagerie', titre: '✉️ Messagerie', roles: TOUS, el: <Messagerie /> },
+  { chemin: '/forum', titre: '💬 Forum', roles: TOUS, el: <Forum /> },
   { chemin: '/parametrage', titre: 'Paramétrage circonscription', roles: GESTION, el: <Parametrage /> },
   { chemin: '/secteurs', titre: 'Secteurs pédagogiques', roles: CIRC, el: <Secteurs /> },
   { chemin: '/ecoles', titre: 'Écoles', roles: TOUS, el: <Ecoles /> },

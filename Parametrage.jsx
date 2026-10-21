@@ -256,6 +256,8 @@ function Bareme() {
 
 // Rubriques que l'on peut ouvrir aux enseignants (comptes créés avec le matricule)
 const RUBRIQUES = [
+  ['/messagerie', 'Messagerie'],
+  ['/forum', 'Forum'],
   ['/', 'Tableau de bord'],
   ['/ecoles', 'Écoles (son école)'],
   ['/annuaire', 'Annuaire des écoles'],
