@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ROLES, useApp } from './contexte.jsx';
 import { supabase, traduireErreur } from './supabase';
+import { ChoixModele } from './Modeles.jsx';
 
 const MANQUE_SCRIPT = 'La messagerie n’est pas encore installée : lancez le script 021_messagerie.sql dans Supabase (SQL Editor).';
 const erreurLisible = (e) => (/function|schema cache|relation .* does not exist/i.test(e?.message || '') ? MANQUE_SCRIPT : traduireErreur(e));
@@ -286,6 +287,7 @@ function Redaction({ carnet, profil, brouillon, changer, apresEnvoi }) {
           ))}
         </div>
       </details>
+      <ChoixModele objet={brouillon.objet} corps={brouillon.corps} appliquer={(m) => changer({ ...brouillon, ...m })} />
       <label>Objet<input value={brouillon.objet} onChange={(e) => maj('objet', e.target.value)} maxLength={150} required /></label>
       <label>Message<textarea rows={9} value={brouillon.corps} onChange={(e) => maj('corps', e.target.value)} required /></label>
       {msg && <p className="erreur">{msg}</p>}

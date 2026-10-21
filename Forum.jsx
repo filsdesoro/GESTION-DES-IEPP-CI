@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ROLES, useApp } from './contexte.jsx';
 import { supabase, traduireErreur } from './supabase';
 import { signalerSuppression } from './Corbeille.jsx';
+import { ChoixModele } from './Modeles.jsx';
 
 const CATEGORIES = ['Annonces', 'Pédagogie', 'Administration', 'Examens et CEPE', 'Statistiques et rapports', 'Questions sur le logiciel', 'Divers'];
 const MANQUE_SCRIPT = 'Le forum n’est pas encore installé : lancez le script 022_forum.sql dans Supabase (SQL Editor).';
@@ -138,6 +139,7 @@ function NouveauSujet({ espace, ieppId, annuler, cree }) {
       <label>Catégorie
         <select value={v.categorie} onChange={(e) => setV({ ...v, categorie: e.target.value })}>{CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select>
       </label>
+      <ChoixModele objet={v.titre} corps={v.contenu} libelleObjet="Titre" appliquer={(m) => setV({ ...v, titre: m.objet, contenu: m.corps })} />
       <label>Titre<input value={v.titre} maxLength={160} required onChange={(e) => setV({ ...v, titre: e.target.value })} placeholder="ex. Organisation du CEPE blanc" /></label>
       <label>Message<textarea rows={8} required value={v.contenu} onChange={(e) => setV({ ...v, contenu: e.target.value })} /></label>
       {msg && <p className="erreur">{msg}</p>}

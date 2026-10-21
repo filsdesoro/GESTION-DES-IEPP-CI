@@ -528,3 +528,13 @@ input.champ-id { font-size: 17px; text-transform: uppercase; }
 .mf-corps { white-space: pre-wrap; line-height: 1.6; }
 .mf-actions { display: flex; gap: 6px; justify-content: flex-end; margin-top: 6px; }
 .nb-reponses { margin: 18px 0 10px; font-size: 16px; color: var(--discret); }
+
+/* Messages prédéfinis */
+.barre-modeles { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.recherche.large { width: 100%; margin-bottom: 10px; }
+.liste-modeles { max-height: 60vh; overflow-y: auto; }
+.groupe-modeles h4 { margin: 14px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--discret); }
+.ligne-modele { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--bord); }
+.ligne-modele > button:first-child { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 9px 6px; background: none; border: 0; font: inherit; text-align: left; cursor: pointer; color: inherit; }
+.ligne-modele > button:first-child:hover { background: #f4f8f6; }
+.ligne-modele > button:first-child span { font-size: 13px; color: var(--discret); }
