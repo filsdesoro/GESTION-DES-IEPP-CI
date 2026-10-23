@@ -200,7 +200,7 @@ function Lecture({ ouvert, parId, profil, fermer, repondre, supprimer, marquerNo
 }
 
 const GROUPES = [
-  ['superviseur', 'Le superviseur', (p) => p.role === 'superviseur'],
+  ['superviseur', 'L’administration du logiciel', (p) => p.role === 'superviseur'],
   ['inspecteurs', 'Tous les inspecteurs (IEPP)', (p) => p.role === 'iepp'],
   ['circ', 'Toute ma circonscription', (p, moi) => p.iepp_id && p.iepp_id === moi.iepp_id],
   ['conseillers', 'Conseillers de ma circonscription', (p, moi) => p.role === 'conseiller' && p.iepp_id === moi.iepp_id],

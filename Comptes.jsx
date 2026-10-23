@@ -23,6 +23,8 @@ function motDePasseProvisoire() {
 export default function Comptes() {
   const { role, ieppId, iepps, profil } = useApp();
   const [recherche, setRecherche] = useState(useLocation().state?.recherche || '');
+  const [filtreIepp, setFiltreIepp] = useState('');
+  const [filtreRole, setFiltreRole] = useState('');
   const [comptes, setComptes] = useState([]);
   const [emails, setEmails] = useState({});
   const [edition, setEdition] = useState(null);
@@ -116,6 +118,13 @@ export default function Comptes() {
   }
 
   const nomIepp = (id) => iepps.find((i) => i.id === id)?.nom || '';
+  const comptesVisibles = role === 'superviseur' ? comptes : comptes.filter((c) => c.role !== 'superviseur');
+  const comptesFiltres = comptesVisibles.filter((c) => {
+    const t = recherche.trim().toLowerCase();
+    return (!filtreIepp || (filtreIepp === 'aucune' ? !c.iepp_id : c.iepp_id === filtreIepp))
+      && (!filtreRole || c.role === filtreRole)
+      && (!t || `${c.nom_complet} ${emails[c.id] || ''} ${c.telephone || ''} ${ROLES[c.role] || ''} ${nomIepp(c.iepp_id)}`.toLowerCase().includes(t));
+  });
   const portee = (c) => c.role === 'superviseur' ? 'Toutes les circonscriptions'
     : c.role === 'iepp' ? nomIepp(c.iepp_id)
       : c.role === 'conseiller' ? `Secteur ${tousSecteurs.find((s) => s.id === c.secteur_id)?.nom || ''}`
@@ -129,7 +138,19 @@ export default function Comptes() {
       )}
       <div className="barre-outils">
         <input className="recherche" placeholder="Rechercher un compte (nom, email, téléphone, matricule, rôle)…" value={recherche} onChange={(e) => setRecherche(e.target.value)} />
-        <span className="discret">{comptes.length} compte(s)</span>
+        {role === 'superviseur' && (
+          <select value={filtreIepp} onChange={(e) => setFiltreIepp(e.target.value)} aria-label="Circonscription">
+            <option value="">Toutes les circonscriptions</option>
+            <option value="aucune">Sans circonscription (superviseurs)</option>
+            {[...new Set(comptes.map((c) => c.iepp_id).filter(Boolean))].map((id) => ({ id, nom: nomIepp(id) || '—' }))
+              .sort((a, b) => a.nom.localeCompare(b.nom, 'fr')).map((i) => <option key={i.id} value={i.id}>{i.nom} ({comptes.filter((c) => c.iepp_id === i.id).length})</option>)}
+          </select>
+        )}
+        <select value={filtreRole} onChange={(e) => setFiltreRole(e.target.value)} aria-label="Rôle">
+          <option value="">Tous les rôles</option>
+          {Object.entries(ROLES).filter(([k]) => role === 'superviseur' || k !== 'superviseur').map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+        </select>
+        <span className="discret">{comptesFiltres.length} compte(s){comptesFiltres.length !== comptes.length ? ` sur ${comptes.length}` : ''}</span>
         <div className="espace" />
         <button className="btn" onClick={() => setEdition({ role: rolesPermis[rolesPermis.length - 2] || 'directeur', iepp_id: ieppId, mot_de_passe: motDePasseProvisoire() })}>+ Créer un compte</button>
       </div>
@@ -138,10 +159,7 @@ export default function Comptes() {
         <table className="tableau">
           <thead><tr><th>Nom</th><th>Email</th><th>Rôle</th><th>Périmètre</th><th>État</th><th /></tr></thead>
           <tbody>
-            {comptes.filter((c) => {
-              const t = recherche.trim().toLowerCase();
-              return !t || `${c.nom_complet} ${emails[c.id] || ''} ${c.telephone || ''} ${ROLES[c.role] || ''}`.toLowerCase().includes(t);
-            }).map((c) => (
+            {comptesFiltres.map((c) => (
               <tr key={c.id}>
                 <td><b>{c.nom_complet}</b></td>
                 <td>{emails[c.id]?.endsWith('@tel.gestion-iepp.ci') ? <>Tél. {emails[c.id].split('@')[0]}</> : emails[c.id]?.endsWith('@mat.gestion-iepp.ci') ? <>Matricule {emails[c.id].split('@')[0].toUpperCase()}</> : emails[c.id] || <span className="discret">—</span>}{c.telephone && !emails[c.id]?.startsWith(c.telephone.replace(/[^0-9]/g, '')) && <div className="discret">Tél. {c.telephone}</div>}</td>
