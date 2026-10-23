@@ -31,8 +31,8 @@ language sql stable security definer set search_path = public, auth as $$
     left join iepp i on i.id = p.iepp_id
     left join drena d on d.id = i.drena_id
     left join ecoles e on e.id = p.ecole_id
-   where est_superviseur()
-      or (mon_role()::text = 'iepp' and p.iepp_id = mon_iepp() and p.role::text <> 'superviseur')
+   where p.role::text <> 'superviseur'
+     and (est_superviseur() or (mon_role()::text = 'iepp' and p.iepp_id = mon_iepp()))
    order by p.derniere_activite desc nulls last, u.last_sign_in_at desc nulls last
 $$;
 grant execute on function presences() to authenticated;

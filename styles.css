@@ -538,3 +538,14 @@ input.champ-id { font-size: 17px; text-transform: uppercase; }
 .ligne-modele > button:first-child { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 9px 6px; background: none; border: 0; font: inherit; text-align: left; cursor: pointer; color: inherit; }
 .ligne-modele > button:first-child:hover { background: #f4f8f6; }
 .ligne-modele > button:first-child span { font-size: 13px; color: var(--discret); }
+
+/* Pastille « connectés » de l'en-tête */
+.pastille-connectes-zone { position: relative; flex-shrink: 0; }
+.pastille-connectes { display: flex; align-items: center; gap: 6px; height: 40px; padding: 0 12px; border: 1px solid var(--bord); border-radius: 10px; background: var(--blanc); font: inherit; cursor: pointer; white-space: nowrap; color: var(--vert-fonce, #0b5d4b); }
+.pastille-connectes.on { border-color: #9fd6c2; background: #f3fbf7; }
+@media (max-width: 1300px) { .texte-connectes { display: none; } }
+.menu-connectes { position: absolute; right: 0; top: 46px; z-index: 50; width: 340px; max-width: 90vw; background: var(--blanc); border: 1px solid var(--bord); border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,.15); padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.mc-titre { font-weight: 800; }
+.mc-liste { max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.mc-ligne { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; }
+.mc-ligne .point-etat { margin-top: 6px; }

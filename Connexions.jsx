@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ROLES, useApp } from './contexte.jsx';
 import { supabase, traduireErreur } from './supabase';
 
@@ -19,6 +20,50 @@ export function usePresence(actif) {
 
 const minutesDepuis = (d) => (d ? (Date.now() - new Date(d).getTime()) / 60000 : Infinity);
 const enLigne = (u) => minutesDepuis(u.derniere_activite) <= EN_LIGNE_MIN;
+
+/** Pastille « 🟢 N connectés » de l'en-tête, avec la liste des comptes en ligne. */
+export function PastilleConnectes() {
+  const [liste, setListe] = useState(null);
+  const [ouvert, setOuvert] = useState(false);
+  const nav = useNavigate();
+  useEffect(() => {
+    let arret = false;
+    const lire = () => supabase.rpc('presences').then(({ data, error }) => {
+      if (!arret && !error) setListe((data || []).filter((u) => u.role !== 'superviseur' && enLigne(u)));
+    });
+    lire();
+    const t = setInterval(lire, 60000);
+    return () => { arret = true; clearInterval(t); };
+  }, []);
+  useEffect(() => {
+    if (!ouvert) return;
+    const fermer = (e) => { if (!e.target.closest('.pastille-connectes-zone')) setOuvert(false); };
+    document.addEventListener('mousedown', fermer);
+    return () => document.removeEventListener('mousedown', fermer);
+  }, [ouvert]);
+  if (liste === null) return null;
+  return (
+    <div className="pastille-connectes-zone">
+      <button className={`pastille-connectes ${liste.length ? 'on' : ''}`} onClick={() => setOuvert(!ouvert)} title="Utilisateurs connectés en ce moment">
+        <span className={`point-etat ${liste.length ? 'on' : ''}`} /> <b>{liste.length}</b> <span className="texte-connectes">connecté{liste.length > 1 ? 's' : ''}</span>
+      </button>
+      {ouvert && (
+        <div className="menu-connectes">
+          <div className="mc-titre">{liste.length ? `${liste.length} compte${liste.length > 1 ? 's' : ''} en ligne` : 'Personne en ligne en ce moment'}</div>
+          <div className="mc-liste">
+            {liste.map((u) => (
+              <div key={u.id} className="mc-ligne">
+                <span className="point-etat on" />
+                <span><b>{u.nom_complet}</b><span className="discret"> — {ROLES[u.role] || u.role}{u.iepp ? ` · ${u.iepp}` : ''}{u.ecole ? ` · ${u.ecole}` : ''}</span></span>
+              </div>
+            ))}
+          </div>
+          <button className="btn-contour petit" onClick={() => { setOuvert(false); nav('/connexions'); }}>Voir toutes les connexions →</button>
+        </div>
+      )}
+    </div>
+  );
+}
 const aujourdhui = (d) => d && new Date(d).toDateString() === new Date().toDateString();
 
 function ilYa(d) {
@@ -49,7 +94,7 @@ export default function Connexions() {
       return;
     }
     setErreur('');
-    setListe((data || []).filter((u) => role === 'superviseur' || u.role !== 'superviseur'));
+    setListe((data || []).filter((u) => u.role !== 'superviseur'));
     setMaj(new Date());
   }
   useEffect(() => {

@@ -6,7 +6,7 @@ import Modal from './Modal.jsx';
 import { BandeauAbonnement } from './Abonnements.jsx';
 import { BarreAnnuler } from './Corbeille.jsx';
 import RechercheGenerale from './Recherche.jsx';
-import { usePresence } from './Connexions.jsx';
+import { PastilleConnectes, usePresence } from './Connexions.jsx';
 import { useNonLus } from './Messagerie.jsx';
 import { useNouveautesForum } from './Forum.jsx';
 
@@ -49,6 +49,7 @@ export default function Layout({ menu, children }) {
             <span>{ROLES[role]}</span>
           </div>
         </div>
+        {menu.some((m) => m.chemin === '/connexions') && <PastilleConnectes />}
         <RechercheGenerale menu={menu} />
         <button className={`btn-contour actualiser ${tourne ? 'tourne' : ''}`} onClick={toutActualiser} title="Recharger toutes les données affichées" disabled={tourne}>
           <span className="icone-actu" aria-hidden="true">⟳</span> Actualiser
