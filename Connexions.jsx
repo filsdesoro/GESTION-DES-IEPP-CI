@@ -49,7 +49,7 @@ export default function Connexions() {
       return;
     }
     setErreur('');
-    setListe((data || []).filter((u) => u.role !== 'superviseur'));
+    setListe((data || []).filter((u) => role === 'superviseur' || u.role !== 'superviseur'));
     setMaj(new Date());
   }
   useEffect(() => {
@@ -61,8 +61,8 @@ export default function Connexions() {
   // Une carte par circonscription
   const parIepp = useMemo(() => {
     const g = {};
-    (liste || []).forEach((u) => {
-      const k = u.iepp_id || 'aucune';
+    (liste || []).filter((u) => u.iepp_id).forEach((u) => {
+      const k = u.iepp_id;
       const x = g[k] || (g[k] = { id: k, nom: u.iepp || '—', drena: u.drena || '', comptes: 0, enLigne: [], inspecteur: null, derniere: null });
       x.comptes += 1;
       if (enLigne(u)) x.enLigne.push(u);
